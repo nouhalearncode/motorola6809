@@ -8,29 +8,34 @@ public static void main(String[] args) {
     
     ROM ram = new ROM();
     ram rom = new ram();
+    registre reg = new registre();
+    mode modeDetector = new mode();
     
     // // Print entire memory (be careful - it's 65,536 entries!)
     // System.out.println("=== FULL MEMORY DUMP ===");
     // System.out.println(ram.memory);
     // // Warning: This will print 65,536 lines!
     
+    // Show initial states
+    System.out.println("=== INITIAL STATES ===");
     rom.displayRange("0000", "000F");
     ram.displayRange("0000", "000F");
+    reg.displayRegisters();
 
     
 
-    //0000 a 03ff
+//     //0000 a 03ff
    
-    for (int i = 0; i < 20; i++) {  // 0000 to 03FF = 1024 bytes
-    String addr = String.format("%04X", i);
-    System.out.println(addr + ": " + ram.getMemory().get(addr));
-}
+//     for (int i = 0; i < 20; i++) {  // 0000 to 03FF = 1024 bytes
+//     String addr = String.format("%04X", i);
+//     System.out.println(addr + ": " + ram.getMemory().get(addr));
+// }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
         ArrayList<ArrayList<String>> myList = new ArrayList<>();
-        lecture lec = new lecture(myList, rom, ram); // This will read input until "END"
+        lecture lec = new lecture(myList, rom, ram, reg, modeDetector); // This will read input until "END"
         
         
 
@@ -39,21 +44,24 @@ public static void main(String[] args) {
         
         
         
+        // Show final states
+        System.out.println("\n=== FINAL STATES ===");
+        ram.displayRange("0000", "000F");
         rom.displayRange("0000", "0010");
+        reg.displayRegisters();
 
 
-// Show memory after loading the assembly code
-        System.out.println("\n=== MEMORY AFTER LOADING ASSEMBLY CODE (0000 to 0010) ===");
-        for (int i = 0; i < 20; i++) {  // Show first 20 addresses to see your code
-            String addr = String.format("%04X", i);
-            System.out.println(addr + ": " + ram.getMemory().get(addr));
-        }
+// // Show memory after loading the assembly code
+//         System.out.println("\n=== MEMORY AFTER LOADING ASSEMBLY CODE (0000 to 0010) ===");
+//         for (int i = 0; i < 20; i++) {  // Show first 20 addresses to see your code
+//             String addr = String.format("%04X", i);
+//             System.out.println(addr + ": " + ram.getMemory().get(addr));
+//         }
 
         
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        mode modeDetector = new mode();
     
         for (int i = 0; i < myList.size(); i++) {
             ArrayList<String> currentLine = myList.get(i);

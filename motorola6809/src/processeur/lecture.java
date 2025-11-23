@@ -11,12 +11,17 @@ public class lecture {
     private static int compteurdelignee  = 0;
     private ROM rom;
     private ram ram;
+    private registre reg;
+    private mode modeDetector;
 
-    public lecture(ArrayList<ArrayList<String>> lines,ram ram, ROM rom){ 
+    public lecture(ArrayList<ArrayList<String>> lines,ram ram, ROM rom , registre reg, mode modeDetector){ 
 
         this.lines = lines;
         this.rom = rom; // INITIALIZE THE RAM FIELD
         this.ram = ram;
+        this.reg = reg;
+        this.modeDetector = modeDetector;
+
         
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter your assembly code (type END to finish):");
@@ -29,9 +34,10 @@ public class lecture {
             // Stop reading when user types "END"
             if (inputLine.equalsIgnoreCase("END")) {
                 
-                 
-                this.ram.writeAndClear("END");
-                this.rom.writeData("END");
+                String[] converted = modeDetector.processAndConvertInstruction("END", "", reg);
+
+                this.ram.writeAndClear(converted[0]);
+                this.rom.writeData(converted[0]);
                 break;
                 
             }
@@ -45,21 +51,74 @@ public class lecture {
             // Split the line into words and create a new ArrayList for this line
             String[] words = inputLine.split("\\s+"); // Split by spaces
             ArrayList<String> lineWords = new ArrayList<>();
-            
-            // Add each word to the line's ArrayList
-            for (String word : words) {
-                if (!word.isEmpty()) { // Skip empty strings
-                    lineWords.add(word);
-                    this.rom.writeData(word); 
-                    this.ram.writeAndClear(word);
-                    
+
+            // Process and convert assembly to machine code
+            if (words.length >= 1) {
+
+                String firstWord = words[0];
+                String secondWord = (words.length > 1) ? words[1] : "";
+
+                // SINGLE METHOD CALL: Process, convert, and update registers
+                String[] converted = modeDetector.processAndConvertInstruction(firstWord, secondWord, reg);
+                String opcode = converted[0];
+                String cleanedOperand = converted[1];
+
+                // Store opcode in ROM and RAM
+                if (!opcode.equals("00")) {
+                    this.rom.writeData(opcode);
+                    this.ram.writeAndClear(opcode);
+                }
+                
+                // Store cleaned operand in ROM (if exists)
+                if (!cleanedOperand.isEmpty() && !cleanedOperand.equals(secondWord)) {
+                    this.rom.writeData(cleanedOperand);
+                }
+                // Keep original words for display
+                for (String word : words) {
+                    if (!word.isEmpty()) {
+                        lineWords.add(word);
+                    }
                 }
             }
-            
-            // Add this line to our main lines ArrayList
             lines.add(lineWords);
         }
     }
+
+
+
+
+            
+            
+           
+            
+    
+
+    // Get the first word of a specific line
+    public String getFirstWord(int compteurdelignee) {
+        // Convert to 0-based indexing and check bounds
+        int index = compteurdelignee - 1;
+        if (index >= 0 && index < lines.size() && !lines.get(index).isEmpty()) {
+            return lines.get(index).get(0);
+        } else {
+            return "Line not found or empty";
+        }
+    }
+
+    // Get the first character of the second word from a specific line
+    public char getSecondWordFirstChar(int compteurdelignee) {
+        int index = compteurdelignee - 1;
+        if (index >= 0 && index < lines.size() && lines.get(index).size() > 1) {
+            String secondWord = lines.get(index).get(1);
+            if (!secondWord.isEmpty()) {
+                return secondWord.charAt(0);
+            }
+        }
+        return ' ';
+    }
+
+
+
+
         public ArrayList<ArrayList<String>> getLines() {
         return lines;
     }
@@ -116,16 +175,7 @@ public class lecture {
 
     
 
-    // Get the first word of a specific line
-//     public String getFirstWord(int compteurdelignee) {
-//         // Convert to 0-based indexing and check bounds
-//         int index = compteurdelignee - 1;
-//         if (index >= 0 && index < lines.size() && !lines.get(index).isEmpty()) {
-//             return lines.get(index).get(0);
-//         } else {
-//             return "Line not found or empty";
-//         }
-//     }
+    
 
 
 //     // Get the first character of the second word from a specific line
