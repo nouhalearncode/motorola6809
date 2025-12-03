@@ -6,10 +6,16 @@ public class main{
 public static void main(String[] args) {
     
     
-    ROM ram = new ROM();
-    ram rom = new ram();
+    ROM rom = new ROM();
+    ram ram = new ram();
     registre reg = new registre();
     mode modeDetector = new mode();
+    
+
+    
+    
+    modeDetector.setRegistre(reg); // ← ADD THIS LINE
+    modeDetector.setRam(ram);
     
     // // Print entire memory (be careful - it's 65,536 entries!)
     // System.out.println("=== FULL MEMORY DUMP ===");
@@ -33,14 +39,14 @@ public static void main(String[] args) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-        ArrayList<ArrayList<String>> myList = new ArrayList<>();
-        lecture lec = new lecture(myList, rom, ram, reg, modeDetector); // This will read input until "END"
-        
-        // Use the new step-by-step execution system
-        pas stepExecutor = new pas(myList, rom, ram, reg, modeDetector);
-        stepExecutor.executeStepByStep();
-
+ArrayList<ArrayList<String>> myList = new ArrayList<>();
+    
+    // JUST READ instructions, don't execute them
+    lecture lec = new lecture(myList, ram, rom, reg, modeDetector);
+    
+    // NOW execute step by step
+    pas stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
+    stepExecutor.executeStepByStep();
 
         // Show final states
         
@@ -78,7 +84,7 @@ public static void main(String[] args) {
         }
 
         // NOW calculate flags for the last non-END instruction
-        modeDetector.calculateLastInstructionFlags();
+        //modeDetector.calculateLastInstructionFlags();
 
         // Scanner sc = new Scanner(System.in);
         // // on lit les nbrs et on les rends en binaire et String
@@ -173,7 +179,7 @@ public static void main(String[] args) {
         // //System.out.println("Flag_P  " +flagv1.flag_P(r));
         // System.out.println("Flag_O  " +flagv1.flag_O(l));
     
-
+ // Pass RAM instance
 
 }
 }

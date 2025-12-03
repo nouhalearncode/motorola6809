@@ -30,17 +30,25 @@ public class lecture {
             
             
             String inputLine = sc.nextLine();
-            
-            // Stop reading when user types "END"
-            if (inputLine.equalsIgnoreCase("END")) {
-                
-                String[] converted = modeDetector.processAndConvertInstruction("END", "", reg);
 
-                this.ram.writeAndClear(converted[0]);
-                this.rom.writeData(converted[0]);
+            if (inputLine.equalsIgnoreCase("END")) {
+                // Just add END to the list, don't execute it yet
+                ArrayList<String> endLine = new ArrayList<>();
+                endLine.add("END");
+                lines.add(endLine);
                 break;
-                
             }
+            
+            // // Stop reading when user types "END"
+            // if (inputLine.equalsIgnoreCase("END")) {
+                
+            //     String[] converted = modeDetector.processAndConvertInstruction("END", "", reg);
+
+            //     this.ram.writeAndClear(converted[0]);
+            //     this.rom.writeData(converted[0]);
+            //     break;
+                
+            // }
             compteurdelignee++;
 
     
@@ -53,36 +61,37 @@ public class lecture {
             ArrayList<String> lineWords = new ArrayList<>();
 
             // Process and convert assembly to machine code
-            if (words.length >= 1) {
+            // if (words.length >= 1) {
 
-                String firstWord = words[0];
-                String secondWord = (words.length > 1) ? words[1] : "";
+            //     String firstWord = words[0];
+            //     String secondWord = (words.length > 1) ? words[1] : "";
 
-                // SINGLE METHOD CALL: Process, convert, and update registers
-                String[] converted = modeDetector.processAndConvertInstruction(firstWord, secondWord, reg);
-                String opcode = converted[0];
-                String cleanedOperand = converted[1];
+            //     // SINGLE METHOD CALL: Process, convert, and update registers
+            //     String[] converted = modeDetector.processAndConvertInstruction(firstWord, secondWord, reg);
+            //     String opcode = converted[0];
+            //     String cleanedOperand = converted[1];
 
-                // Store opcode in ROM and RAM
-                if (!opcode.equals("00")) {
-                    this.rom.writeData(opcode);
-                    this.ram.writeAndClear(opcode);
-                }
+            //     // Store opcode in ROM and RAM
+            //     if (!opcode.equals("00")) {
+            //         this.rom.writeData(opcode);
+            //         this.ram.writeAndClear(opcode);
+            //     }
                 
-                // Store cleaned operand in ROM (if exists)
-                if (!cleanedOperand.isEmpty() && !cleanedOperand.equals(secondWord)) {
-                    this.rom.writeData(cleanedOperand);
-                }
+            //     // Store cleaned operand in ROM (if exists)
+            //     if (!cleanedOperand.isEmpty() && !cleanedOperand.equals(secondWord)) {
+            //         this.rom.writeData(cleanedOperand);
+            //     }
                 // Keep original words for display
                 for (String word : words) {
                     if (!word.isEmpty()) {
                         lineWords.add(word);
                     }
                 }
+                lines.add(lineWords);
             }
-            lines.add(lineWords);
-        }
     }
+           
+
 
 
 

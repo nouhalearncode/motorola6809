@@ -9,15 +9,26 @@ public class ROM {
     private int currentAddress = 0;
     
     public ROM() {
-        memory = new LinkedHashMap<>();
-        // Initialiser 65536 cases (0000 à FFFF)
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i); // 4-digit hex now
-            memory.put(addr, "00");
-        }
-        System.out.println("[ROM] Initialisée - 65536 octets disponibles (0000-FFFF)\n");
+    memory = new LinkedHashMap<>();
+    // Initialiser 65536 cases (0000 à FFFF)
+    for (int i = 0; i < 65536; i++) {
+        String addr = String.format("%04X", i); // 4-digit hex now
+        memory.put(addr, "00");
     }
+    System.out.println("[ROM] Initialisée - 65536 octets disponibles (0000-FFFF)\n");
+}
         
+
+public void debugMemory() {
+    System.out.println("DEBUG: ROM Memory Contents 0000-000F:");
+    for (int i = 0; i <= 0x000F; i++) {
+        String addr = String.format("%04X", i);
+        String val = memory.get(addr);
+        System.out.println("DEBUG: " + addr + " = " + val + " (exists: " + memory.containsKey(addr) + ")");
+    }
+}
+
+
 
     // ADD THIS METHOD - THIS IS WHAT'S MISSING
     public Map<String, String> getMemory() {
@@ -57,20 +68,22 @@ public class ROM {
     }
 
     // ADD THIS METHOD
-    public void displayRange(String startAddr, String endAddr) {
-        int start = Integer.parseInt(startAddr, 16);
-        int end = Integer.parseInt(endAddr, 16);
+    // ADD THIS METHOD
+// ADD THIS METHOD
+public void displayRange(String startAddr, String endAddr) {
+    int start = Integer.parseInt(startAddr, 16);
+    int end = Integer.parseInt(endAddr, 16);
+    
+    System.out.println("\n=== ROM " + startAddr + "-" + endAddr + " ===");
+    for (int i = start; i <= end; i++) {
+        String addr = String.format("%04X", i);
+        String val = memory.get(addr);
         
-        System.out.println("\n=== ROM " + startAddr + "-" + endAddr + " ===");
-        for (int i = start; i <= end; i++) {
-            String addr = String.format("%04X", i);
-            String val = memory.get(addr);
-            
-            System.out.println(addr + ": " + val);
-            }
-        }
+        // Always show the address, even if it's "00"
+        System.out.println(addr + ": " + val);
     }
-
+}
+}
     
     
 

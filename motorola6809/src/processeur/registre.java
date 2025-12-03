@@ -35,6 +35,23 @@ public class registre {
     public void setCCR(String value) { this.CCR = value; }
     public void setPC(int value) { this.pc = value; }
 
+    
+public int getCarryFlag() {
+    // CCR format: bits 0=C, 1=V, 2=Z, 3=N, etc.
+    int ccrValue = Integer.parseInt(CCR, 16);
+    return (ccrValue & 0x01); // Bit 0 is carry
+}
+
+public void setCarryFlag(int carry) {
+    int ccrValue = Integer.parseInt(CCR, 16);
+    if (carry == 1) {
+        ccrValue = ccrValue | 0x01; // Set bit 0
+    } else {
+        ccrValue = ccrValue & 0xFE; // Clear bit 0
+    }
+    CCR = String.format("%02X", ccrValue);
+}
+
     // Display all registers
     public void displayRegisters() {
         System.out.println("\n=== REGISTERS ===");

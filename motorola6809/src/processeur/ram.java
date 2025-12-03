@@ -23,34 +23,69 @@ public class ram {
 
 
 
-    // WRITE AND CLEAR: Only keep current word at 0000, clear everything else
     public void writeAndClear(String data) {
-        // Clear ALL memory first (reset to "00")
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i);
-            ra.put(addr, "00");
+    // Clear ALL memory first
+    for (int i = 0; i < 65536; i++) {
+        String addr = String.format("%04X", i);
+        ra.put(addr, "00");
+    }
+    
+    // If no data, just return (all zeros)
+    if (data.isEmpty()) {
+        return;
+    }
+    
+    // Split data into 2-character chunks starting from address 0000
+    int address = 0;
+    
+    for (int i = 0; i < data.length(); i += 2) {
+        String chunk;
+        if (i + 2 <= data.length()) {
+            chunk = data.substring(i, i + 2);  // Get 2 characters
+        } else {
+            // If odd number of characters, pad with zero
+            chunk = data.substring(i) + "0";
         }
         
-        // Split data into 2-character chunks and store sequentially
-        int address = 0;
-        for (int i = 0; i < data.length(); i += 2) {
-            String chunk;
-            if (i + 2 <= data.length()) {
-                chunk = data.substring(i, i + 2);
-            } else {
-                chunk = data.substring(i); // Last chunk might be 1 character
-            }
-            
-            String addr = String.format("%04X", address);
-
-
-        // Write current data at address 0000 only
+        String addr = String.format("%04X", address);
         ra.put(addr, chunk);
         address++;
-        // Stop if we reach memory limit (unlikely for single words)
-            if (address >= 65536) break;
-        }
+        
+        // Stop if we reach memory limit
+        if (address >= 65536) break;
     }
+}
+    // WRITE AND CLEAR: Only keep current word at 0000, clear everything else
+    // In your ram class - FIX THIS METHOD
+// public void writeAndClear(String data) {
+//     // DON'T clear all memory - just write sequentially
+//     int address = 0;
+    
+//     // Find the next available address (instead of always starting at 0000)
+//     for (int i = 0; i < 65536; i++) {
+//         String addr = String.format("%04X", i);
+//         if (ra.get(addr).equals("00")) {
+//             address = i;
+//             break;
+//         }
+//     }
+    
+//     // Split data into 2-character chunks and store sequentially
+//     for (int i = 0; i < data.length(); i += 2) {
+//         String chunk;
+//         if (i + 2 <= data.length()) {
+//             chunk = data.substring(i, i + 2);
+//         } else {
+//             chunk = data.substring(i);
+//         }
+        
+//         String addr = String.format("%04X", address);
+//         ra.put(addr, chunk);
+//         address++;
+        
+//         if (address >= 65536) break;
+//     }
+// }
 
     
 
