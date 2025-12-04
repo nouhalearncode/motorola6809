@@ -1,0 +1,18 @@
+# Fichiers compilés Java
+*.class
+bin/
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*~
+
+# Fichiers IDE
+.vscode/
+.idea/
+*.iml
+
+# Artifacts temporaires
+SECTION*.txt
+PHASE*_helper*.txt
+PHASE*_modifications*.txt
