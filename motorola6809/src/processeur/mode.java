@@ -97,20 +97,31 @@ public class mode {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
-            // PHASE 2: Support du mode indexé pour LDA (Upgraded)
+            // PHASE 2/3: Support du mode indexé pour LDA (Upgraded)
             else if (mode.equals(indexe)) {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
-                String register = parts[1];
-                int value = Integer.parseInt(parts[2]);
+
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    // PHASE 3: Offset accumulateur
+                    String acc = parts[1]; // A, B, ou D
+                    String indexReg = parts[2]; // X, Y, U, S
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                } else if (!type.equals("UNKNOWN")) {
+                    // PHASE 2: Autres types (offsets, auto-inc/dec)
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                } else {
+                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+                }
 
                 if (!type.equals("UNKNOWN")) {
                     opcode = "A6"; // LDA indexed opcode
-                    cycle = 4; // Base cycle, ajustements possibles selon le mode
-
-                    // Calculer l'adresse effective (avec mise à jour registres si nécessaire)
-                    int effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cycle = 4;
 
                     // Lire la valeur en RAM
                     String val = readFromRAM(effectiveAddr);
@@ -124,8 +135,6 @@ public class mode {
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
 
                     cleanedOperand = "";
-                } else {
-                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                 }
             }
         } else if (firstWord.equals("LDB")) {
@@ -141,19 +150,32 @@ public class mode {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
-            // PHASE 2: Support du mode indexé pour LDB (Upgraded)
+            // PHASE 2/3: Support du mode indexé pour LDB (Upgraded)
             else if (mode.equals(indexe)) {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
-                String register = parts[1];
-                int value = Integer.parseInt(parts[2]);
+
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    // PHASE 3: Offset accumulateur
+                    String acc = parts[1]; // A, B, ou D
+                    String indexReg = parts[2]; // X, Y, U, S
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                } else if (!type.equals("UNKNOWN")) {
+                    // PHASE 2: Autres types (offsets, auto-inc/dec)
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                } else {
+                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+                }
 
                 if (!type.equals("UNKNOWN")) {
                     opcode = "E6"; // LDB indexed opcode
                     cycle = 4;
 
-                    int effectiveAddr = calculateIndexedAddress(type, register, value);
                     String val = readFromRAM(effectiveAddr);
 
                     reg.setB(val);
@@ -163,8 +185,6 @@ public class mode {
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
 
                     cleanedOperand = "";
-                } else {
-                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                 }
             }
         } else if (firstWord.equals("LDD")) {
@@ -1394,6 +1414,13 @@ public class mode {
             return "OFFSET_5_BIT:" + reg + ":" + offset;
         }
 
+        // 5. PHASE 3: Offset Accumulateur (A,X ou B,Y ou D,U)
+        if (operand.matches("^[ABD],[XYUS]$")) {
+            String acc = operand.substring(0, 1); // A, B, ou D
+            String reg = operand.substring(2); // X, Y, U, ou S
+            return "ACC_OFFSET:" + acc + ":" + reg;
+        }
+
         return "UNKNOWN:?:0";
     }
 
@@ -1501,6 +1528,68 @@ public class mode {
                 " Val=" + value + " => EffAddr=" + String.format("%04X", effectiveAddr));
 
         return effectiveAddr;
+    }
+
+    /**
+     * PHASE 3: Calcule l'adresse effective pour le mode indexé avec accumulateur
+     * 
+     * @param accumulator   L'accumulateur utilisé ("A", "B", ou "D")
+     * @param indexRegister Le registre d'index ("X", "Y", "U", "S")
+     * @return L'adresse effective calculée
+     */
+    private int calculateAccumulatorIndexed(String accumulator, String indexRegister) {
+        // 1. Récupérer la valeur du registre d'index
+        int baseAddr = 0;
+        switch (indexRegister.toUpperCase()) {
+            case "X":
+                baseAddr = Integer.parseInt(reg.getX(), 16);
+                break;
+            case "Y":
+                baseAddr = Integer.parseInt(reg.getY(), 16);
+                break;
+            case "U":
+                baseAddr = Integer.parseInt(reg.getU(), 16);
+                break;
+            case "S":
+                baseAddr = Integer.parseInt(reg.getS(), 16);
+                break;
+        }
+
+        // 2. Récupérer la valeur de l'accumulateur
+        int accValue = 0;
+        switch (accumulator.toUpperCase()) {
+            case "A":
+                // A est 8-bits, mais SIGNÉ
+                accValue = Integer.parseInt(reg.getA(), 16);
+                // Gérer le signe (si bit 7 = 1, c'est négatif)
+                if (accValue > 127) {
+                    accValue = accValue - 256; // Convertir en négatif
+                }
+                break;
+
+            case "B":
+                // B est 8-bits, mais SIGNÉ
+                accValue = Integer.parseInt(reg.getB(), 16);
+                if (accValue > 127) {
+                    accValue = accValue - 256;
+                }
+                break;
+
+            case "D":
+                // D est 16-bits (D = A:B), NON SIGNÉ dans ce contexte
+                accValue = Integer.parseInt(reg.getD(), 16);
+                break;
+        }
+
+        // 3. Calculer l'adresse effective
+        int effectiveAddr = baseAddr + accValue;
+
+        // Debug
+        System.out.println("[INDEXED PHASE 3] Type=ACC_OFFSET Acc=" + accumulator +
+                " Val=" + accValue + " Base=" + String.format("%04X", baseAddr) +
+                " => EffAddr=" + String.format("%04X", effectiveAddr & 0xFFFF));
+
+        return effectiveAddr & 0xFFFF; // Masque 16-bits
     }
 
     /**
