@@ -110,13 +110,18 @@ public class mode {
                     String acc = parts[1]; // A, B, ou D
                     String indexReg = parts[2]; // X, Y, U, S
                     effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                    // Générer post-byte pour ACC_OFFSET avec le registre d'index
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
                 } else if (!type.equals("UNKNOWN")) {
                     // PHASE 2: Autres types (offsets, auto-inc/dec)
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
                     effectiveAddr = calculateIndexedAddress(type, register, value);
+                    // Générer post-byte
+                    cleanedOperand = generatePostByte(type, register, value);
                 } else {
                     System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+                    cleanedOperand = "";
                 }
 
                 if (!type.equals("UNKNOWN")) {
@@ -133,8 +138,6 @@ public class mode {
                     lastInstructionHex = val;
                     lastInstructionResult = Integer.parseInt(val, 16);
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
-
-                    cleanedOperand = "";
                 }
             }
         } else if (firstWord.equals("LDB")) {
@@ -163,13 +166,18 @@ public class mode {
                     String acc = parts[1]; // A, B, ou D
                     String indexReg = parts[2]; // X, Y, U, S
                     effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                    // Générer post-byte pour ACC_OFFSET avec le registre d'index
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
                 } else if (!type.equals("UNKNOWN")) {
                     // PHASE 2: Autres types (offsets, auto-inc/dec)
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
                     effectiveAddr = calculateIndexedAddress(type, register, value);
+                    // Générer post-byte
+                    cleanedOperand = generatePostByte(type, register, value);
                 } else {
                     System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+                    cleanedOperand = "";
                 }
 
                 if (!type.equals("UNKNOWN")) {
@@ -183,8 +191,6 @@ public class mode {
                     lastInstructionHex = val;
                     lastInstructionResult = Integer.parseInt(val, 16);
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
-
-                    cleanedOperand = "";
                 }
             }
         } else if (firstWord.equals("LDD")) {
@@ -1590,6 +1596,138 @@ public class mode {
                 " => EffAddr=" + String.format("%04X", effectiveAddr & 0xFFFF));
 
         return effectiveAddr & 0xFFFF; // Masque 16-bits
+    }
+
+    /**
+     * Génère le post-byte pour le mode indexé selon la spécification 6809
+     * 
+     * @param type     Type de mode indexé (ZERO_OFFSET, AUTO_INC, etc.)
+     * @param register Registre d'index (X, Y, U, S) ou accumulateur (A, B, D)
+     * @param value    Valeur (offset ou quantité inc/dec)
+     * @return Post-byte en format hexadécimal (String de 2 caractères)
+     */
+    private String generatePostByte(String type, String register, int value) {
+        int postByte = 0;
+
+        // Bits 6-5: Registre (RR)
+        // 00=X, 01=Y, 10=U, 11=S
+        int regBits = 0;
+        switch (register.toUpperCase()) {
+            case "X":
+                regBits = 0b00;
+                break;
+            case "Y":
+                regBits = 0b01;
+                break;
+            case "U":
+                regBits = 0b10;
+                break;
+            case "S":
+                regBits = 0b11;
+                break;
+        }
+
+        switch (type) {
+            case "ZERO_OFFSET":
+                // Format: 1RR00100
+                postByte = 0b10000100 | (regBits << 5);
+                break;
+
+            case "AUTO_INC":
+                // ,R+ = 1RR00000
+                // ,R++ = 1RR00001
+                if (value == 1) {
+                    postByte = 0b10000000 | (regBits << 5);
+                } else { // value == 2
+                    postByte = 0b10000001 | (regBits << 5);
+                }
+                break;
+
+            case "AUTO_DEC":
+                // ,-R = 1RR00010
+                // ,--R = 1RR00011
+                if (value == 1) {
+                    postByte = 0b10000010 | (regBits << 5);
+                } else { // value == 2
+                    postByte = 0b10000011 | (regBits << 5);
+                }
+                break;
+
+            case "OFFSET_5_BIT":
+                // Format: 0RRnnnnn (offset signé 5-bits)
+                // Convertir l'offset en 5-bits signé
+                int offset5 = value & 0x1F; // Garde 5 bits
+                postByte = (regBits << 5) | offset5;
+                break;
+
+            case "ACC_OFFSET":
+                // A,R = 1RR00110
+                // B,R = 1RR00101
+                // D,R = 1RR01011
+                switch (register.toUpperCase()) {
+                    case "A":
+                        postByte = 0b10000110;
+                        break;
+                    case "B":
+                        postByte = 0b10000101;
+                        break;
+                    case "D":
+                        postByte = 0b10001011;
+                        break;
+                }
+                // Pour ACC_OFFSET, 'value' contient le registre d'index
+                // On doit réinterpréter register comme l'acc et récupérer le vrai reg
+                break;
+        }
+
+        return String.format("%02X", postByte);
+    }
+
+    /**
+     * Génère le post-byte spécifiquement pour les modes avec offset accumulateur
+     * Nécessaire car pour ACC_OFFSET, le registre est l'index (X,Y,U,S) pas
+     * l'accumulateur
+     * 
+     * @param accumulator   L'accumulateur (A, B, ou D)
+     * @param indexRegister Le registre d'index (X, Y, U, S)
+     * @return Post-byte en format hexadécimal
+     */
+    private String generatePostByteAccOffset(String accumulator, String indexRegister) {
+        int postByte = 0;
+
+        // Bits 6-5: Registre d'index (RR)
+        int regBits = 0;
+        switch (indexRegister.toUpperCase()) {
+            case "X":
+                regBits = 0b00;
+                break;
+            case "Y":
+                regBits = 0b01;
+                break;
+            case "U":
+                regBits = 0b10;
+                break;
+            case "S":
+                regBits = 0b11;
+                break;
+        }
+
+        // A,R = 1RR00110
+        // B,R = 1RR00101
+        // D,R = 1RR01011
+        switch (accumulator.toUpperCase()) {
+            case "A":
+                postByte = 0b10000110 | (regBits << 5);
+                break;
+            case "B":
+                postByte = 0b10000101 | (regBits << 5);
+                break;
+            case "D":
+                postByte = 0b10001011 | (regBits << 5);
+                break;
+        }
+
+        return String.format("%02X", postByte);
     }
 
     /**
