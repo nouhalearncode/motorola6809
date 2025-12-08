@@ -97,36 +97,35 @@ public class mode {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
-            // PHASE 1: Support du mode indexé pour LDA
+            // PHASE 2: Support du mode indexé pour LDA (Upgraded)
             else if (mode.equals(indexe)) {
-                // Phase 1: Déplacement nul uniquement
-                String indexType = parseIndexedMode(secondWord);
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                String register = parts[1];
+                int value = Integer.parseInt(parts[2]);
 
-                if (indexType.equals("INDEXED_ZERO_OFFSET")) {
+                if (!type.equals("UNKNOWN")) {
                     opcode = "A6"; // LDA indexed opcode
-                    cycle = 4;
+                    cycle = 4; // Base cycle, ajustements possibles selon le mode
 
-                    // Extraire le registre (X, Y, U, S)
-                    String register = secondWord.replace(",", "").trim();
-
-                    // Calculer l'adresse effective (registre + 0)
-                    int effectiveAddr = calculateIndexedAddress(register, 0);
+                    // Calculer l'adresse effective (avec mise à jour registres si nécessaire)
+                    int effectiveAddr = calculateIndexedAddress(type, register, value);
 
                     // Lire la valeur en RAM
-                    String value = readFromRAM(effectiveAddr);
+                    String val = readFromRAM(effectiveAddr);
 
                     // Charger dans A
-                    reg.setA(value);
+                    reg.setA(val);
 
-                    // Pour les flags
-                    lastInstructionHex = value;
-                    lastInstructionResult = Integer.parseInt(value, 16);
+                    // Flags
+                    lastInstructionHex = val;
+                    lastInstructionResult = Integer.parseInt(val, 16);
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
 
-                    // Pour la ROM, on stocke juste l'opcode
                     cleanedOperand = "";
                 } else {
-                    System.out.println("Mode indexé non supporté (Phase 1): " + secondWord);
+                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                 }
             }
         } else if (firstWord.equals("LDB")) {
@@ -142,27 +141,30 @@ public class mode {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
-            // PHASE 1: Support du mode indexé pour LDB
+            // PHASE 2: Support du mode indexé pour LDB (Upgraded)
             else if (mode.equals(indexe)) {
-                String indexType = parseIndexedMode(secondWord);
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                String register = parts[1];
+                int value = Integer.parseInt(parts[2]);
 
-                if (indexType.equals("INDEXED_ZERO_OFFSET")) {
+                if (!type.equals("UNKNOWN")) {
                     opcode = "E6"; // LDB indexed opcode
                     cycle = 4;
 
-                    String register = secondWord.replace(",", "").trim();
-                    int effectiveAddr = calculateIndexedAddress(register, 0);
-                    String value = readFromRAM(effectiveAddr);
+                    int effectiveAddr = calculateIndexedAddress(type, register, value);
+                    String val = readFromRAM(effectiveAddr);
 
-                    reg.setB(value);
+                    reg.setB(val);
 
-                    lastInstructionHex = value;
-                    lastInstructionResult = Integer.parseInt(value, 16);
+                    lastInstructionHex = val;
+                    lastInstructionResult = Integer.parseInt(val, 16);
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
 
                     cleanedOperand = "";
                 } else {
-                    System.out.println("Mode indexé non supporté (Phase 1): " + secondWord);
+                    System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                 }
             }
         } else if (firstWord.equals("LDD")) {
@@ -1353,36 +1355,79 @@ public class mode {
      * @param operand L'opérande complet (ex: ",X", "5,Y", "A,X")
      * @return Type de mode indexé sous forme de String
      */
+    /**
+     * Parse le mode indexé et détermine le type exact
+     * Phase 2: Supporte offsets 5-bits et Auto-Inc/Dec
+     * 
+     * @param operand L'opérande complet (ex: ",X", "5,Y", ",X+")
+     * @return String format "TYPE:REGISTRE:VALEUR"
+     */
     private String parseIndexedMode(String operand) {
-        // Enlever les espaces
         operand = operand.trim();
 
-        // Phase 1: Déplacement nul uniquement
-        // Format: ,X ,Y ,U ,S
+        // 1. Déplacement nul (,X)
         if (operand.matches("^,[XYUS]$")) {
-            return "INDEXED_ZERO_OFFSET";
+            String reg = operand.substring(1);
+            return "ZERO_OFFSET:" + reg + ":0";
         }
 
-        // TODO Phase 2: Ajouter les autres types
-        // - Déplacement constant (5,X)
-        // - Auto-incrémentation (,X+)
-        // - etc.
+        // 2. Auto-Incrémentation (,X+ ou ,X++)
+        if (operand.matches("^,[XYUS]\\+{1,2}$")) {
+            String reg = operand.substring(1, 2); // Extrait X,Y,U,S
+            int amount = operand.endsWith("++") ? 2 : 1;
+            return "AUTO_INC:" + reg + ":" + amount;
+        }
 
-        return "INDEXED_UNKNOWN";
+        // 3. Auto-Décrémentation (,-X ou ,--X)
+        if (operand.matches("^,-{1,2}[XYUS]$")) {
+            String reg = operand.substring(operand.length() - 1);
+            int amount = operand.contains("--") ? 2 : 1;
+            return "AUTO_DEC:" + reg + ":" + amount;
+        }
+
+        // 4. Offset Constant 5-bits (5,X ou -3,Y)
+        // Regex: nombre (positif ou négatif) suivi de virgule et registre
+        if (operand.matches("^-?\\d+,[XYUS]$")) {
+            String[] parts = operand.split(",");
+            int offset = Integer.parseInt(parts[0]);
+            String reg = parts[1];
+            return "OFFSET_5_BIT:" + reg + ":" + offset;
+        }
+
+        return "UNKNOWN:?:0";
     }
 
     /**
-     * Calcule l'adresse effective pour le mode indexé
-     * Phase 1: Base + 0 (déplacement nul)
+     * Simule l'extraction d'un offset 5-bits signé depuis un post-byte.
+     * Bit 7 = 0 (Mode 5-bit offset)
+     * Bits 4-0 = Offset signé (-16 à +15)
+     */
+    private int decode5BitOffset(int postByte) {
+        // 1. Extraire les 5 bits de poids faible
+        int offset = postByte & 0x1F; // Masque 00011111
+
+        // 2. Vérifier le bit de signe (Bit 4, valeur 16)
+        if ((offset & 0x10) != 0) {
+            // 3. Extension de signe (Sign Extension)
+            // On remplit les bits supérieurs avec des 1
+            offset = offset | 0xFFFFFFE0;
+        }
+        return offset;
+    }
+
+    /**
+     * Calcule l'adresse effective et GÈRE LES EFFETS DE BORD (Mise à jour
+     * registres)
      * 
+     * @param type     Le type d'indexation (ZERO_OFFSET, AUTO_INC, etc.)
      * @param register Le registre d'index (X, Y, U, S)
-     * @param offset   Le déplacement (0 pour Phase 1)
+     * @param value    La valeur associée (offset ou montant inc/dec)
      * @return L'adresse effective calculée
      */
-    private int calculateIndexedAddress(String register, int offset) {
+    private int calculateIndexedAddress(String type, String register, int value) {
         int baseAddr = 0;
 
-        // Récupérer la valeur du registre d'index
+        // 1. Récupérer la valeur actuelle du registre
         switch (register.toUpperCase()) {
             case "X":
                 baseAddr = Integer.parseInt(reg.getX(), 16);
@@ -1397,17 +1442,63 @@ public class mode {
                 baseAddr = Integer.parseInt(reg.getS(), 16);
                 break;
             default:
-                System.out.println("Erreur: Registre d'index inconnu: " + register);
                 return 0;
         }
 
-        // Calculer l'adresse effective
-        int effectiveAddr = baseAddr + offset;
+        int effectiveAddr = 0;
+        int newRegValue = baseAddr;
 
-        // Debug (optionnel)
-        System.out.println("[INDEXED MODE] Base=" + String.format("%04X", baseAddr) +
-                " Offset=" + offset +
-                " => Adresse=" + String.format("%04X", effectiveAddr));
+        // 2. Calculer selon le type
+        switch (type) {
+            case "ZERO_OFFSET":
+                effectiveAddr = baseAddr;
+                break;
+
+            case "OFFSET_5_BIT":
+                // Simulation du post-byte pour validation (optionnel mais pédagogique)
+                // Ici on utilise directement la valeur parsée, mais on pourrait passer par
+                // decode5BitOffset
+                // pour être puriste. Pour l'instant, on fait confiance au parsing.
+                effectiveAddr = baseAddr + value;
+                break;
+
+            case "AUTO_INC": // Post-Incrément (,X+)
+                effectiveAddr = baseAddr; // Utilise l'adresse AVANT incrément
+                newRegValue = baseAddr + value; // +1 ou +2
+                break;
+
+            case "AUTO_DEC": // Pré-Décrément (,-X)
+                newRegValue = baseAddr - value; // -1 ou -2
+                effectiveAddr = newRegValue; // Utilise l'adresse APRÈS décrément
+                break;
+
+            default:
+                return baseAddr;
+        }
+
+        // 3. Mettre à jour le registre si nécessaire (Effet de bord)
+        if (type.equals("AUTO_INC") || type.equals("AUTO_DEC")) {
+            String newHex = String.format("%04X", newRegValue & 0xFFFF); // Masque 16 bits
+            switch (register.toUpperCase()) {
+                case "X":
+                    reg.setX(newHex);
+                    break;
+                case "Y":
+                    reg.setY(newHex);
+                    break;
+                case "U":
+                    reg.setU(newHex);
+                    break;
+                case "S":
+                    reg.setS(newHex);
+                    break;
+            }
+            System.out.println("   -> Registre " + register + " mis à jour: " + newHex);
+        }
+
+        // Debug
+        System.out.println("[INDEXED PHASE 2] Type=" + type + " Reg=" + register +
+                " Val=" + value + " => EffAddr=" + String.format("%04X", effectiveAddr));
 
         return effectiveAddr;
     }
