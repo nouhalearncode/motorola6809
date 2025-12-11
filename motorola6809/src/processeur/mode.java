@@ -119,6 +119,15 @@ public class mode {
                     effectiveAddr = calculateIndexedAddress(type, register, value);
                     // Générer post-byte
                     cleanedOperand = generatePostByte(type, register, value);
+
+                    // PHASE 4: Ajouter les octets d'offset au post-byte
+                    if (type.equals("OFFSET_8_BIT")) {
+                        String offsetHex = String.format("%02X", value & 0xFF);
+                        cleanedOperand += offsetHex;
+                    } else if (type.equals("OFFSET_16_BIT")) {
+                        String offsetHex = String.format("%04X", value & 0xFFFF);
+                        cleanedOperand += offsetHex;
+                    }
                 } else {
                     System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                     cleanedOperand = "";
@@ -175,6 +184,15 @@ public class mode {
                     effectiveAddr = calculateIndexedAddress(type, register, value);
                     // Générer post-byte
                     cleanedOperand = generatePostByte(type, register, value);
+
+                    // PHASE 4: Ajouter les octets d'offset au post-byte
+                    if (type.equals("OFFSET_8_BIT")) {
+                        String offsetHex = String.format("%02X", value & 0xFF);
+                        cleanedOperand += offsetHex;
+                    } else if (type.equals("OFFSET_16_BIT")) {
+                        String offsetHex = String.format("%04X", value & 0xFFFF);
+                        cleanedOperand += offsetHex;
+                    }
                 } else {
                     System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
                     cleanedOperand = "";
@@ -598,6 +616,46 @@ public class mode {
 
         // Update the instance variables
         this.op = opcode;
+
+        // ====================================================================
+        // MISE À JOUR DU PROGRAM COUNTER (PC)
+        // ====================================================================
+        // Le PC doit avancer selon la taille de l'instruction:
+        // - 1 octet: opcode seul (ex: END)
+        // - 2 octets: opcode + 1 byte (ex: LDA #$10, LDA ,X avec post-byte)
+        // - 3 octets: opcode + 2 bytes (ex: LDX #$1000)
+        // - 4 octets: opcode + 1 byte prefix + 2 bytes (ex: LDY #$2000)
+
+        int instructionSize = 1; // Au minimum, l'opcode (1 octet)
+
+        // Si l'opcode est 00, c'est une instruction invalide, ne pas incrémenter
+        if (!opcode.equals("00")) {
+            // Calculer la taille selon le cleanedOperand
+            if (!cleanedOperand.isEmpty()) {
+                // Cas spéciaux pour les opcodes préfixés (page 2)
+                if (opcode.equals("10")) {
+                    // Prefix pour Y, U, S (ex: 10 8E pour LDY #)
+                    // On a: prefix (1 byte) + opcode réel (1 byte) + données
+                    instructionSize = 2; // prefix + opcode
+                    // Si cleanedOperand a 4 caractères hex = 2 bytes de données
+                    if (cleanedOperand.length() == 4) {
+                        instructionSize += 2; // Total: 4 bytes
+                    } else if (cleanedOperand.length() == 2) {
+                        instructionSize += 1; // Total: 3 bytes
+                    }
+                } else {
+                    // Instructions normales
+                    // cleanedOperand contient soit la valeur immédiate, soit le post-byte
+                    int operandLength = cleanedOperand.length() / 2; // 2 chars hex = 1 byte
+                    instructionSize += operandLength;
+                }
+            }
+
+            // Incrémenter le PC avec masque 16-bits pour éviter l'overflow
+            int currentPC = Integer.parseInt(reg.getPC(), 16);
+            int newPC = (currentPC + instructionSize) & 0xFFFF; // Masque pour rester dans 16-bits
+            reg.setPC(newPC);
+        }
 
         return new String[] { opcode, cleanedOperand };
     }
@@ -1427,6 +1485,25 @@ public class mode {
             return "ACC_OFFSET:" + acc + ":" + reg;
         }
 
+        // 6. PHASE 4: Offset 8-bits ou 16-bits ($XX,R ou $XXXX,R)
+        // Pattern: $XX,R ou $XXXX,R avec $ obligatoire
+        if (operand.matches("^\\$[0-9A-Fa-f]+,[XYUS]$")) {
+            String[] parts = operand.split(",");
+            String offsetHex = parts[0].substring(1); // Enlever le $
+            String register = parts[1];
+
+            int offsetValue = Integer.parseInt(offsetHex, 16);
+
+            // Déterminer si 8-bits ou 16-bits selon la valeur
+            if (offsetValue <= 0xFF) {
+                // 8-bits (0-255, sera signé lors du calcul)
+                return "OFFSET_8_BIT:" + register + ":" + offsetValue;
+            } else {
+                // 16-bits (> 255)
+                return "OFFSET_16_BIT:" + register + ":" + offsetValue;
+            }
+        }
+
         return "UNKNOWN:?:0";
     }
 
@@ -1503,6 +1580,26 @@ public class mode {
             case "AUTO_DEC": // Pré-Décrément (,-X)
                 newRegValue = baseAddr - value; // -1 ou -2
                 effectiveAddr = newRegValue; // Utilise l'adresse APRÈS décrément
+                break;
+
+            case "OFFSET_8_BIT":
+                // CRITICAL: Cast to byte pour forcer sign extension
+                // $FF (255) devient -1, $80 (128) devient -128
+                effectiveAddr = baseAddr + (byte) value;
+                System.out.println("[INDEXED PHASE 4] Type=OFFSET_8_BIT Reg=" + register +
+                        " Offset=$" + String.format("%02X", value) +
+                        " (signé=" + (byte) value + ") => EffAddr=" +
+                        String.format("%04X", effectiveAddr & 0xFFFF));
+                break;
+
+            case "OFFSET_16_BIT":
+                // CRITICAL: Cast to short pour forcer sign extension
+                // $FFFF (65535) devient -1, $8000 (32768) devient -32768
+                effectiveAddr = baseAddr + (short) value;
+                System.out.println("[INDEXED PHASE 4] Type=OFFSET_16_BIT Reg=" + register +
+                        " Offset=$" + String.format("%04X", value) +
+                        " (signé=" + (short) value + ") => EffAddr=" +
+                        String.format("%04X", effectiveAddr & 0xFFFF));
                 break;
 
             default:
@@ -1677,6 +1774,18 @@ public class mode {
                 }
                 // Pour ACC_OFFSET, 'value' contient le registre d'index
                 // On doit réinterpréter register comme l'acc et récupérer le vrai reg
+                break;
+
+            case "OFFSET_8_BIT":
+                // Format: 1RR01000 (8-bit offset)
+                // L'offset lui-même sera stocké dans cleanedOperand après le post-byte
+                postByte = 0b10001000 | (regBits << 5);
+                break;
+
+            case "OFFSET_16_BIT":
+                // Format: 1RR01001 (16-bit offset)
+                // L'offset lui-même sera stocké dans cleanedOperand après le post-byte
+                postByte = 0b10001001 | (regBits << 5);
                 break;
         }
 
