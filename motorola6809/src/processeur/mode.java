@@ -114,11 +114,11 @@ public class mode {
                     // Générer post-byte
                     cleanedOperand = generatePostByte(type, register, value);
 
-                    // PHASE 4: Ajouter les octets d'offset au post-byte
-                    if (type.equals("OFFSET_8_BIT")) {
+                    // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
                         String offsetHex = String.format("%02X", value & 0xFF);
                         cleanedOperand += offsetHex;
-                    } else if (type.equals("OFFSET_16_BIT")) {
+                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
                         String offsetHex = String.format("%04X", value & 0xFFFF);
                         cleanedOperand += offsetHex;
                     }
@@ -179,11 +179,11 @@ public class mode {
                     // Générer post-byte
                     cleanedOperand = generatePostByte(type, register, value);
 
-                    // PHASE 4: Ajouter les octets d'offset au post-byte
-                    if (type.equals("OFFSET_8_BIT")) {
+                    // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
                         String offsetHex = String.format("%02X", value & 0xFF);
                         cleanedOperand += offsetHex;
-                    } else if (type.equals("OFFSET_16_BIT")) {
+                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
                         String offsetHex = String.format("%04X", value & 0xFFFF);
                         cleanedOperand += offsetHex;
                     }
@@ -3004,6 +3004,23 @@ public class mode {
             }
         }
 
+        // 7. PHASE 5: PC-Relative (PCR)
+        // Pattern: $XX,PCR ou $XXXX,PCR
+        if (operand.matches("^\\$[0-9A-Fa-f]+,PCR$")) {
+            String[] parts = operand.split(",");
+            String offsetHex = parts[0].substring(1); // Enlever le $
+            // Le registre est toujours PCR
+
+            int offsetValue = Integer.parseInt(offsetHex, 16);
+
+            // Déterminer si 8-bits ou 16-bits selon la valeur
+            if (offsetValue <= 0xFF) {
+                return "PC_REL_8_BIT:PCR:" + offsetValue;
+            } else {
+                return "PC_REL_16_BIT:PCR:" + offsetValue;
+            }
+        }
+
         return "UNKNOWN:?:0";
     }
 
@@ -3038,21 +3055,28 @@ public class mode {
         int baseAddr = 0;
 
         // 1. Récupérer la valeur actuelle du registre
-        switch (register.toUpperCase()) {
-            case "X":
-                baseAddr = Integer.parseInt(reg.getX(), 16);
-                break;
-            case "Y":
-                baseAddr = Integer.parseInt(reg.getY(), 16);
-                break;
-            case "U":
-                baseAddr = Integer.parseInt(reg.getU(), 16);
-                break;
-            case "S":
-                baseAddr = Integer.parseInt(reg.getS(), 16);
-                break;
-            default:
-                return 0;
+        if (!type.startsWith("PC_REL")) { // PC-Relative modes don't use X,Y,U,S as base
+            switch (register.toUpperCase()) {
+                case "X":
+                    baseAddr = Integer.parseInt(reg.getX(), 16);
+                    break;
+                case "Y":
+                    baseAddr = Integer.parseInt(reg.getY(), 16);
+                    break;
+                case "U":
+                    baseAddr = Integer.parseInt(reg.getU(), 16);
+                    break;
+                case "S":
+                    baseAddr = Integer.parseInt(reg.getS(), 16);
+                    break;
+                default:
+                    // For ACC_OFFSET, register is the accumulator, not the index register
+                    // This method signature is a bit overloaded.
+                    // For now, if it's ACC_OFFSET, baseAddr will be set later.
+                    if (!type.equals("ACC_OFFSET")) {
+                        return 0;
+                    }
+            }
         }
 
         int effectiveAddr = 0;
@@ -3102,6 +3126,30 @@ public class mode {
                         String.format("%04X", effectiveAddr & 0xFFFF));
                 break;
 
+            case "PC_REL_8_BIT":
+                int currentPC8 = Integer.parseInt(reg.getPC(), 16);
+                // Instruction Size = 3 (Opcode + Postbyte + Offset8)
+                // Effective Addr = (PC + 3) + Signed Offset8
+                effectiveAddr = (currentPC8 + 3) + (byte) value;
+                effectiveAddr = effectiveAddr & 0xFFFF; // Masque 16 bits
+                System.out.println("[INDEXED PHASE 5] Type=PC_REL_8_BIT PC=" + String.format("%04X", currentPC8) +
+                        " Offset=$" + String.format("%02X", value) +
+                        " (signé=" + (byte) value + ") => EffAddr=" +
+                        String.format("%04X", effectiveAddr));
+                break;
+
+            case "PC_REL_16_BIT":
+                int currentPC16 = Integer.parseInt(reg.getPC(), 16);
+                // Instruction Size = 4 (Opcode + Postbyte + Offset16)
+                // Effective Addr = (PC + 4) + Signed Offset16
+                effectiveAddr = (currentPC16 + 4) + (short) value;
+                effectiveAddr = effectiveAddr & 0xFFFF; // Masque 16 bits
+                System.out.println("[INDEXED PHASE 5] Type=PC_REL_16_BIT PC=" + String.format("%04X", currentPC16) +
+                        " Offset=$" + String.format("%04X", value) +
+                        " (signé=" + (short) value + ") => EffAddr=" +
+                        String.format("%04X", effectiveAddr));
+                break;
+
             default:
                 return baseAddr;
         }
@@ -3127,8 +3175,10 @@ public class mode {
         }
 
         // Debug
-        System.out.println("[INDEXED PHASE 2] Type=" + type + " Reg=" + register +
-                " Val=" + value + " => EffAddr=" + String.format("%04X", effectiveAddr));
+        if (!type.startsWith("PC_REL") && !type.equals("OFFSET_8_BIT") && !type.equals("OFFSET_16_BIT")) {
+            System.out.println("[INDEXED PHASE 2] Type=" + type + " Reg=" + register +
+                    " Val=" + value + " => EffAddr=" + String.format("%04X", effectiveAddr));
+        }
 
         return effectiveAddr;
     }
@@ -3286,6 +3336,16 @@ public class mode {
                 // Format: 1RR01001 (16-bit offset)
                 // L'offset lui-même sera stocké dans cleanedOperand après le post-byte
                 postByte = 0b10001001 | (regBits << 5);
+                break;
+
+            case "PC_REL_8_BIT":
+                // Table 2: 8C
+                postByte = 0x8C;
+                break;
+
+            case "PC_REL_16_BIT":
+                // Table 2: 8D
+                postByte = 0x8D;
                 break;
         }
 
