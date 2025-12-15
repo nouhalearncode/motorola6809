@@ -20,76 +20,75 @@ public class pas {
         resetMemory();
     }
 
-private void executeSingleStep(int stepIndex) {
-    if (stepIndex >= assemblyLines.size()) return;
+    private void executeSingleStep(int stepIndex) {
+        if (stepIndex >= assemblyLines.size())
+            return;
 
-    ArrayList<String> currentLine = assemblyLines.get(stepIndex);
+        ArrayList<String> currentLine = assemblyLines.get(stepIndex);
 
-    if (currentLine.size() >= 1 && !currentLine.get(0).equals("END")) {
-        String firstWord = currentLine.get(0);
-        String secondWord = (currentLine.size() > 1) ? currentLine.get(1) : "";
+        if (currentLine.size() >= 1 && !currentLine.get(0).equals("END")) {
+            String firstWord = currentLine.get(0);
+            String secondWord = (currentLine.size() > 1) ? currentLine.get(1) : "";
 
-        // Execute this instruction
-        String[] converted = modeDetector.processAndConvertInstruction(firstWord, secondWord, reg);
-        String opcode = converted[0];
-        String cleanedOperand = converted[1];
+            // Execute this instruction
+            String[] converted = modeDetector.processAndConvertInstruction(firstWord, secondWord, reg);
+            String opcode = converted[0];
+            String cleanedOperand = converted[1];
 
-        // Store instruction in ROM
-        storeInstructionInROM(firstWord, secondWord, opcode, cleanedOperand);
+            // Store instruction in ROM
+            storeInstructionInROM(firstWord, secondWord, opcode, cleanedOperand);
 
-        // Update RAM based on mode
-        updateRAMWithInstruction(firstWord, opcode, cleanedOperand);
+            // Update RAM based on mode
+            updateRAMWithInstruction(firstWord, opcode, cleanedOperand);
 
-    } else if (currentLine.get(0).equals("END")) {
-        // Store END instruction in ROM
-        storeInstructionInROM("END", "", "3F", "");
-        
-        // Update RAM to show END opcode
-        updateRAMWithInstruction("END", "3F", "");
+        } else if (currentLine.get(0).equals("END")) {
+            // Store END instruction in ROM
+            storeInstructionInROM("END", "", "3F", "");
+
+            // Update RAM to show END opcode
+            updateRAMWithInstruction("END", "3F", "");
+        }
     }
-}
 
-private void debugStackMemory() {
-    System.out.println("\n=== STACK MEMORY DEBUG (00F0-0100) ===");
-    for (int addr = 0x00F0; addr <= 0x0100; addr++) {
-        String addrStr = String.format("%04X", addr);
-        String value = ram.getram().get(addrStr);
-        System.out.println(addrStr + ": " + (value != null ? value : "null"));
+    private void debugStackMemory() {
+        System.out.println("\n=== STACK MEMORY DEBUG (00F0-0100) ===");
+        for (int addr = 0x00F0; addr <= 0x0100; addr++) {
+            String addrStr = String.format("%04X", addr);
+            String value = ram.getram().get(addrStr);
+            System.out.println(addrStr + ": " + (value != null ? value : "null"));
+        }
     }
-}
 
-// NEW METHOD: Smart RAM update based on instruction mode
-private void updateRAMWithInstruction(String instruction, String opcode, String operand) {
-    // Clear RAM first
-    for (int i = 0; i < 65536; i++) {
-        String addr = String.format("%04X", i);
-        ram.getram().put(addr, "00");
-    }
-    
-    // Check mode by looking at the original instruction
-    if (instruction.equals("ABX") || instruction.equals("DECA") || instruction.equals("INCB") || 
-        instruction.equals("CLRA") || instruction.equals("COMB") || 
-        instruction.equals("DAA") || instruction.equals("MUL") || 
-        instruction.equals("NEGA") || instruction.equals("NEGB") || instruction.equals("NOP")) {
-        // INHERENT MODE: Store opcode at 0000
-        if (!opcode.equals("00")) {
+    // NEW METHOD: Smart RAM update based on instruction mode
+    private void updateRAMWithInstruction(String instruction, String opcode, String operand) {
+        // Clear RAM first
+        for (int i = 0; i < 65536; i++) {
+            String addr = String.format("%04X", i);
+            ram.getram().put(addr, "00");
+        }
+
+        // Check mode by looking at the original instruction
+        if (instruction.equals("ABX") || instruction.equals("DECA") || instruction.equals("INCB") ||
+                instruction.equals("CLRA") || instruction.equals("COMB") ||
+                instruction.equals("DAA") || instruction.equals("MUL") ||
+                instruction.equals("NEGA") || instruction.equals("NEGB") || instruction.equals("NOP")) {
+            // INHERENT MODE: Store opcode at 0000
+            if (!opcode.equals("00")) {
+                ram.getram().put("0000", opcode);
+            }
+        } else if (instruction.startsWith("LD") || instruction.startsWith("ADD") ||
+                instruction.startsWith("SUB") || instruction.startsWith("AND") ||
+                instruction.startsWith("OR") || instruction.startsWith("EOR") ||
+                instruction.startsWith("CMP")) {
+            // IMMEDIATE MODE: Store operand (data value) at 0000
+            if (!operand.isEmpty()) {
+                ram.getram().put("0000", operand);
+            }
+        } else if (instruction.equals("END")) {
+            // END: Store opcode at 0000
             ram.getram().put("0000", opcode);
         }
-    } 
-    else if (instruction.startsWith("LD") || instruction.startsWith("ADD") || 
-             instruction.startsWith("SUB") || instruction.startsWith("AND") || 
-             instruction.startsWith("OR") || instruction.startsWith("EOR") || 
-             instruction.startsWith("CMP")) {
-        // IMMEDIATE MODE: Store operand (data value) at 0000
-        if (!operand.isEmpty()) {
-            ram.getram().put("0000", operand);
-        }
     }
-    else if (instruction.equals("END")) {
-        // END: Store opcode at 0000
-        ram.getram().put("0000", opcode);
-    }
-}
 
     private void resetMemory() {
         // Reset ROM completely - fill with zeros
@@ -350,7 +349,8 @@ private void updateRAMWithInstruction(String instruction, String opcode, String 
 
         // Final ROM shows complete executed program
         System.out.println("\n=== FINAL ROM (COMPLETE PROGRAM) ===");
-        int finalRomEnd = calculateROMEndAddress(assemblyLines.size() - 1);
+        // Use the actual current address from ROM tracker
+        int finalRomEnd = rom.getCurrentAddressInt() > 0 ? rom.getCurrentAddressInt() - 1 : 0;
         rom.displayRange("0000", String.format("%04X", finalRomEnd));
 
         // Calculate flags for last non-END instruction
