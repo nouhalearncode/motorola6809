@@ -3004,20 +3004,20 @@ public class mode {
             }
         }
 
-        // 7. PHASE 5: PC-Relative (PCR)
-        // Pattern: $XX,PCR ou $XXXX,PCR
-        if (operand.matches("^\\$[0-9A-Fa-f]+,PCR$")) {
+        // 7. PHASE 5: PC-Relative (PC)
+        // Pattern: $XX,PC ou $XXXX,PC
+        if (operand.matches("^\\$[0-9A-Fa-f]+,PCR?$")) {
             String[] parts = operand.split(",");
             String offsetHex = parts[0].substring(1); // Enlever le $
-            // Le registre est toujours PCR
+            // Le registre est toujours PC
 
             int offsetValue = Integer.parseInt(offsetHex, 16);
 
             // Déterminer si 8-bits ou 16-bits selon la valeur
             if (offsetValue <= 0xFF) {
-                return "PC_REL_8_BIT:PCR:" + offsetValue;
+                return "PC_REL_8_BIT:PC:" + offsetValue;
             } else {
-                return "PC_REL_16_BIT:PCR:" + offsetValue;
+                return "PC_REL_16_BIT:PC:" + offsetValue;
             }
         }
 
