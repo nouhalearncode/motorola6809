@@ -67,9 +67,6 @@ public class mode {
             return direct;
         }
 
-        
-
-        
         return "Unknown mode";
     }
 
@@ -222,26 +219,26 @@ public class mode {
 
             }
         } else if (firstWord.equals("LDS")) {
-    if (mode.equals(immediat)) {
-        opcode = "10CE";  // Correct opcode for LDS immediate
-        cycle = 4;
-        cleanedOperand = secondWord.replace("#$", "");
-        
-        // FIXED: Actually set the S register!
-        reg.setS(cleanedOperand);
-        
-        // Also update D register (since D = A:B and S affects D)
-        String aVal = reg.getA();
-        String bVal = reg.getB();
-        String dVal = aVal + bVal;
-        reg.setD(dVal);
-        
-        // Store for flag calculation
-        lastInstructionHex = cleanedOperand;
-        lastInstructionResult = Integer.parseInt(cleanedOperand, 16);
-        lastInstructionFlags = new String[] { "Z", "N", "V" };
-    }
-} else if (firstWord.equals("LDU")) {
+            if (mode.equals(immediat)) {
+                opcode = "10CE"; // Correct opcode for LDS immediate
+                cycle = 4;
+                cleanedOperand = secondWord.replace("#$", "");
+
+                // FIXED: Actually set the S register!
+                reg.setS(cleanedOperand);
+
+                // Also update D register (since D = A:B and S affects D)
+                String aVal = reg.getA();
+                String bVal = reg.getB();
+                String dVal = aVal + bVal;
+                reg.setD(dVal);
+
+                // Store for flag calculation
+                lastInstructionHex = cleanedOperand;
+                lastInstructionResult = Integer.parseInt(cleanedOperand, 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            }
+        } else if (firstWord.equals("LDU")) {
             if (mode.equals(immediat)) {
                 opcode = "CE";
                 cycle = 3;
@@ -611,365 +608,383 @@ public class mode {
                 lastInstructionFlags = new String[] {}; // PULU may affect flags if pulling CCR
             }
         }
-        
+
         // === INHERENT MODE INSTRUCTIONS ===
-else if (firstWord.equals("ABX")) {
-    opcode = "3A";
-    cycle = 3;
-    cleanedOperand = "";
-    int result = performABX(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{}; // ABX doesn't affect flags
-    
-} else if (firstWord.equals("CLRA")) {
-    opcode = "4F";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performCLRA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("CLRB")) {
-    opcode = "5F";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performCLRB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("COMA")) {
-    opcode = "43";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performCOMA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("COMB")) {
-    opcode = "53";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performCOMB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("DAA")) {
-    opcode = "19";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performDAA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-    
-} else if (firstWord.equals("DECA")) {
-    opcode = "4A";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performDECA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("DECB")) {
-    opcode = "5A";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performDECB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("INCA")) {
-    opcode = "4C";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performINCA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("INCB")) {
-    opcode = "5C";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performINCB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-    
-} else if (firstWord.equals("MUL")) {
-    opcode = "3D";
-    cycle = 11;
-    cleanedOperand = "";
-    int result = performMUL(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "C"};
-    
-} else if (firstWord.equals("NEGA")) {
-    opcode = "40";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performNEGA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-    
-} else if (firstWord.equals("NEGB")) {
-    opcode = "50";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performNEGB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-    
-} else if (firstWord.equals("NOP")) {
-    opcode = "12";
-    cycle = 2;
-    cleanedOperand = "";
-    lastInstructionHex = "";
-    lastInstructionResult = 0;
-    lastInstructionFlags = new String[]{}; // NOP doesn't affect flags
-}
+        else if (firstWord.equals("ABX")) {
+            opcode = "3A";
+            cycle = 3;
+            cleanedOperand = "";
+            int result = performABX(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {}; // ABX doesn't affect flags
 
-// === ROTATE INSTRUCTIONS ===
-else if (firstWord.equals("ROLA")) {
-    opcode = "49";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performROLA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("ROLB")) {
-    opcode = "59";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performROLB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("RORA")) {
-    opcode = "46";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performRORA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("RORB")) {
-    opcode = "56";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performRORB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-}
+        } else if (firstWord.equals("CLRA")) {
+            opcode = "4F";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performCLRA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
 
-// === SUBROUTINE & INTERRUPT INSTRUCTIONS ===
-else if (firstWord.equals("RTS")) {
-    opcode = "39";
-    cycle = 5;
-    cleanedOperand = "";
-    int result = performRTS(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{};
-} else if (firstWord.equals("RTI")) {
-    opcode = "3B";
-    cycle = 15;  // RTI is complex, restores many registers
-    cleanedOperand = "";
-    int result = performRTI(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"}; // Restores all flags
-} else if (firstWord.equals("SWI")) {
-    opcode = "3F";
-    cycle = 19;  // SWI saves all registers
-    cleanedOperand = "";
-    int result = performSWI(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{};
-} else if (firstWord.equals("SWI2")) {
-    opcode = "103F";
-    cycle = 20;
-    cleanedOperand = "";
-    int result = performSWI2(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{};
-} else if (firstWord.equals("SWI3")) {
-    opcode = "113F";
-    cycle = 20;
-    cleanedOperand = "";
-    int result = performSWI3(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{};
-} else if (firstWord.equals("SYNC")) {
-    opcode = "13";
-    cycle = 2;  // Plus wait time for interrupt
-    cleanedOperand = "";
-    int result = performSYNC(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{};
-}
+        } else if (firstWord.equals("CLRB")) {
+            opcode = "5F";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performCLRB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
 
-// === TEST INSTRUCTIONS ===
-else if (firstWord.equals("TSTA")) {
-    opcode = "4D";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performTSTA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-} else if (firstWord.equals("TSTB")) {
-    opcode = "5D";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performTSTB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V"};
-}
+        } else if (firstWord.equals("COMA")) {
+            opcode = "43";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performCOMA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
 
-// === DATA CONVERSION (6809 only) ===
-else if (firstWord.equals("SEX")) {
-    opcode = "1D";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performSEX(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N"};
-}
+        } else if (firstWord.equals("COMB")) {
+            opcode = "53";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performCOMB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+        } else if (firstWord.equals("DAA")) {
+            opcode = "19";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performDAA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+
+        } else if (firstWord.equals("DECA")) {
+            opcode = "4A";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performDECA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+        } else if (firstWord.equals("DECB")) {
+            opcode = "5A";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performDECB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+        } else if (firstWord.equals("INCA")) {
+            opcode = "4C";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performINCA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+        } else if (firstWord.equals("INCB")) {
+            opcode = "5C";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performINCB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+        } else if (firstWord.equals("MUL")) {
+            opcode = "3D";
+            cycle = 11;
+            cleanedOperand = "";
+            int result = performMUL(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "C" };
+
+        } else if (firstWord.equals("NEGA")) {
+            opcode = "40";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performNEGA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+
+        } else if (firstWord.equals("NEGB")) {
+            opcode = "50";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performNEGB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+
+        } else if (firstWord.equals("NOP")) {
+            opcode = "12";
+            cycle = 2;
+            cleanedOperand = "";
+            lastInstructionHex = "";
+            lastInstructionResult = 0;
+            lastInstructionFlags = new String[] {}; // NOP doesn't affect flags
+        }
+
+        // === ROTATE INSTRUCTIONS ===
+        else if (firstWord.equals("ROLA")) {
+            opcode = "49";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performROLA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("ROLB")) {
+            opcode = "59";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performROLB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("RORA")) {
+            opcode = "46";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performRORA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("RORB")) {
+            opcode = "56";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performRORB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        }
+
+        // === SUBROUTINE & INTERRUPT INSTRUCTIONS ===
+        else if (firstWord.equals("RTS")) {
+            opcode = "39";
+            cycle = 5;
+            cleanedOperand = "";
+            int result = performRTS(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {};
+        } else if (firstWord.equals("RTI")) {
+            opcode = "3B";
+            cycle = 15; // RTI is complex, restores many registers
+            cleanedOperand = "";
+            int result = performRTI(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" }; // Restores all flags
+        } else if (firstWord.equals("SWI")) {
+            opcode = "3F";
+            cycle = 19; // SWI saves all registers
+            cleanedOperand = "";
+            int result = performSWI(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {};
+        } else if (firstWord.equals("SWI2")) {
+            opcode = "103F";
+            cycle = 20;
+            cleanedOperand = "";
+            int result = performSWI2(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {};
+        } else if (firstWord.equals("SWI3")) {
+            opcode = "113F";
+            cycle = 20;
+            cleanedOperand = "";
+            int result = performSWI3(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {};
+        } else if (firstWord.equals("SYNC")) {
+            opcode = "13";
+            cycle = 2; // Plus wait time for interrupt
+            cleanedOperand = "";
+            int result = performSYNC(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] {};
+        }
+
+        // === TEST INSTRUCTIONS ===
+        else if (firstWord.equals("TSTA")) {
+            opcode = "4D";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performTSTA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+        } else if (firstWord.equals("TSTB")) {
+            opcode = "5D";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performTSTB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+        }
+
+        // === DATA TRANSFER & EXCHANGE ===
+        else if (firstWord.equals("TFR")) {
+            opcode = "1F";
+            cycle = 6;
+            // cleanedOperand will hold the Post-byte
+            cleanedOperand = performTFR(secondWord, reg);
+            lastInstructionHex = cleanedOperand;
+            lastInstructionResult = 0;
+            lastInstructionFlags = new String[] {}; // Flags usually unaffected (unless CC dest)
+        } else if (firstWord.equals("EXG")) {
+            opcode = "1E";
+            cycle = 8;
+            cleanedOperand = performEXG(secondWord, reg);
+            lastInstructionHex = cleanedOperand;
+            lastInstructionResult = 0;
+            lastInstructionFlags = new String[] {};
+        }
+
+        // === DATA CONVERSION (6809 only) ===
+        else if (firstWord.equals("SEX")) {
+            opcode = "1D";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performSEX(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N" };
+        }
 
         // === ARITHMETIC SHIFT INSTRUCTIONS ===
-else if (firstWord.equals("ASLA")) {
-    opcode = "48";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performASLA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("ASLB")) {
-    opcode = "58";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performASLB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("ASRA")) {
-    opcode = "47";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performASRA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("ASRB")) {
-    opcode = "57";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performASRB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-}
+        else if (firstWord.equals("ASLA")) {
+            opcode = "48";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performASLA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("ASLB")) {
+            opcode = "58";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performASLB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("ASRA")) {
+            opcode = "47";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performASRA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("ASRB")) {
+            opcode = "57";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performASRB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        }
 
-// === LOGICAL SHIFT INSTRUCTIONS ===
-else if (firstWord.equals("LSLA")) {
-    opcode = "48";  // Same as ASLA in 6809
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performLSLA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("LSLB")) {
-    opcode = "58";  // Same as ASLB in 6809
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performLSLB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("LSRA")) {
-    opcode = "44";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performLSRA(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-} else if (firstWord.equals("LSRB")) {
-    opcode = "54";
-    cycle = 2;
-    cleanedOperand = "";
-    int result = performLSRB(reg);
-    lastInstructionHex = "";
-    lastInstructionResult = result;
-    lastInstructionFlags = new String[]{"Z", "N", "V", "C"};
-}
+        // === LOGICAL SHIFT INSTRUCTIONS ===
+        else if (firstWord.equals("LSLA")) {
+            opcode = "48"; // Same as ASLA in 6809
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performLSLA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("LSLB")) {
+            opcode = "58"; // Same as ASLB in 6809
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performLSLB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("LSRA")) {
+            opcode = "44";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performLSRA(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        } else if (firstWord.equals("LSRB")) {
+            opcode = "54";
+            cycle = 2;
+            cleanedOperand = "";
+            int result = performLSRB(reg);
+            lastInstructionHex = "";
+            lastInstructionResult = result;
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        }
 
-// === ADD WITH CARRY INSTRUCTIONS (IMMEDIATE) ===
-else if (firstWord.equals("ADCA")) {
-    if (mode.equals(immediat)) {
-        opcode = "89"; // ADCA immediate opcode
-        cycle = 2;
-        cleanedOperand = secondWord.replace("#$", "");
-        int result = performADCA(cleanedOperand, reg);
-        lastInstructionHex = cleanedOperand;
-        lastInstructionResult = result;
-        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-    }
-} else if (firstWord.equals("ADCB")) {
-    if (mode.equals(immediat)) {
-        opcode = "C9"; // ADCB immediate opcode
-        cycle = 2;
-        cleanedOperand = secondWord.replace("#$", "");
-        int result = performADCB(cleanedOperand, reg);
-        lastInstructionHex = cleanedOperand;
-        lastInstructionResult = result;
-        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-    }
-}
+        // === ADD WITH CARRY INSTRUCTIONS (IMMEDIATE) ===
+        else if (firstWord.equals("ADCA")) {
+            if (mode.equals(immediat)) {
+                opcode = "89"; // ADCA immediate opcode
+                cycle = 2;
+                cleanedOperand = secondWord.replace("#$", "");
+                int result = performADCA(cleanedOperand, reg);
+                lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            }
+        } else if (firstWord.equals("ADCB")) {
+            if (mode.equals(immediat)) {
+                opcode = "C9"; // ADCB immediate opcode
+                cycle = 2;
+                cleanedOperand = secondWord.replace("#$", "");
+                int result = performADCB(cleanedOperand, reg);
+                lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            }
+        }
 
-// === SUBTRACT WITH CARRY INSTRUCTIONS (IMMEDIAT) ===  
-else if (firstWord.equals("SBCA")) {
-    if (mode.equals(immediat)) {
-        opcode = "82"; // SBCA immediate opcode
-        cycle = 2;
-        cleanedOperand = secondWord.replace("#$", "");
-        int result = performSBCA(cleanedOperand, reg);
-        lastInstructionHex = cleanedOperand;
-        lastInstructionResult = result;
-        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-    }
-} else if (firstWord.equals("SBCB")) {
-    if (mode.equals(immediat)) {
-        opcode = "C2"; // SBCB immediate opcode
-        cycle = 2;
-        cleanedOperand = secondWord.replace("#$", "");
-        int result = performSBCB(cleanedOperand, reg);
-        lastInstructionHex = cleanedOperand;
-        lastInstructionResult = result;
-        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-    }
-}
+        // === SUBTRACT WITH CARRY INSTRUCTIONS (IMMEDIAT) ===
+        else if (firstWord.equals("SBCA")) {
+            if (mode.equals(immediat)) {
+                opcode = "82"; // SBCA immediate opcode
+                cycle = 2;
+                cleanedOperand = secondWord.replace("#$", "");
+                int result = performSBCA(cleanedOperand, reg);
+                lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            }
+        } else if (firstWord.equals("SBCB")) {
+            if (mode.equals(immediat)) {
+                opcode = "C2"; // SBCB immediate opcode
+                cycle = 2;
+                cleanedOperand = secondWord.replace("#$", "");
+                int result = performSBCB(cleanedOperand, reg);
+                lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            }
+        }
 
         else if (firstWord.equals("END")) {
             opcode = "3F"; // SWI instruction as END marker
@@ -1014,13 +1029,10 @@ else if (firstWord.equals("SBCA")) {
                 }
             }
 
-            
-
             // SPECIAL CASE: For END (SWI=3F), it's always 1 byte
-    if (firstWord.equals("END")) {
-        instructionSize = 1;
-    }
-
+            if (firstWord.equals("END")) {
+                instructionSize = 1;
+            }
 
             // Incrémenter le PC avec masque 16-bits pour éviter l'overflow
             int currentPC = Integer.parseInt(reg.getPC(), 16);
@@ -1034,629 +1046,793 @@ else if (firstWord.equals("SBCA")) {
     // === STACK OPERATION METHODS ===
 
     // ==============================================
-// ARITHMETIC SHIFT METHODS
-// ==============================================
+    // ARITHMETIC SHIFT METHODS
+    // ==============================================
 
-// ASLA - Arithmetic Shift Left A (same as LSLA)
-private int performASLA(registre reg) {
-    return performLSLA(reg);  // ASLA and LSLA are identical in 6809
-}
-
-// ASLB - Arithmetic Shift Left B (same as LSLB)
-private int performASLB(registre reg) {
-    return performLSLB(reg);  // ASLB and LSLB are identical in 6809
-}
-
-// ASRA - Arithmetic Shift Right A (sign extended)
-private int performASRA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    
-    // Save bit 7 (sign bit) for sign extension
-    int signBit = (aValue >> 7) & 0x01;
-    // Get bit 0 for carry flag
-    int carryOut = aValue & 0x01;
-    
-    // Shift right, extending sign bit
-    int result = (aValue >> 1) | (signBit << 7);
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = signBit;  // N = sign bit (bit 7)
-    int vFlag = 0;        // V is cleared
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
-
-// ASRB - Arithmetic Shift Right B (sign extended)
-private int performASRB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    
-    int signBit = (bValue >> 7) & 0x01;
-    int carryOut = bValue & 0x01;
-    
-    int result = (bValue >> 1) | (signBit << 7);
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = signBit;
-    int vFlag = 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
-
-// ==============================================
-// ADD/SUBTRACT WITH CARRY METHODS
-// ==============================================
-
-// ADCA - Add with Carry to A
-private int performADCA(String operand, registre reg) {
-    int currentA = Integer.parseInt(reg.getA(), 16);
-    int operandValue = Integer.parseInt(operand, 16);
-    int carry = getCarryFlag(reg); // Get current carry flag
-    
-    // ADCA: A = A + operand + C
-    int result = currentA + operandValue + carry;
-    
-    // Handle 8-bit overflow
-    int carryOut = (result > 0xFF) ? 1 : 0;
-    result = result & 0xFF; // Keep only lower 8 bits
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    
-    // V flag: Overflow if both operands same sign but result different sign
-    int signA = (currentA >> 7) & 0x01;
-    int signOp = (operandValue >> 7) & 0x01;
-    int signRes = (result >> 7) & 0x01;
-    int vFlag = ((signA == signOp) && (signA != signRes)) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
-
-// ADCB - Add with Carry to B
-private int performADCB(String operand, registre reg) {
-    int currentB = Integer.parseInt(reg.getB(), 16);
-    int operandValue = Integer.parseInt(operand, 16);
-    int carry = getCarryFlag(reg);
-    
-    int result = currentB + operandValue + carry;
-    
-    int carryOut = (result > 0xFF) ? 1 : 0;
-    result = result & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    
-    int signB = (currentB >> 7) & 0x01;
-    int signOp = (operandValue >> 7) & 0x01;
-    int signRes = (result >> 7) & 0x01;
-    int vFlag = ((signB == signOp) && (signB != signRes)) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
-
-// SBCA - Subtract with Carry from A
-private int performSBCA(String operand, registre reg) {
-    int currentA = Integer.parseInt(reg.getA(), 16);
-    int operandValue = Integer.parseInt(operand, 16);
-    int carry = getCarryFlag(reg); // Note: In subtraction, carry = borrow
-    
-    // SBCA: A = A - operand - C
-    int result = currentA - operandValue - carry;
-    
-    // Handle underflow (borrow)
-    int borrowOut = (result < 0) ? 1 : 0;
-    if (result < 0) {
-        result += 256; // Two's complement wrap-around
+    // ASLA - Arithmetic Shift Left A (same as LSLA)
+    private int performASLA(registre reg) {
+        return performLSLA(reg); // ASLA and LSLA are identical in 6809
     }
-    result = result & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    
-    // V flag for subtraction: Overflow if signs differ and result sign = operand sign
-    int signA = (currentA >> 7) & 0x01;
-    int signOp = (operandValue >> 7) & 0x01;
-    int signRes = (result >> 7) & 0x01;
-    int vFlag = ((signA != signOp) && (signOp == signRes)) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrowOut, reg);
-    
-    return result;
-}
 
-// SBCB - Subtract with Carry from B
-private int performSBCB(String operand, registre reg) {
-    int currentB = Integer.parseInt(reg.getB(), 16);
-    int operandValue = Integer.parseInt(operand, 16);
-    int carry = getCarryFlag(reg);
-    
-    int result = currentB - operandValue - carry;
-    
-    int borrowOut = (result < 0) ? 1 : 0;
-    if (result < 0) {
-        result += 256;
+    // ASLB - Arithmetic Shift Left B (same as LSLB)
+    private int performASLB(registre reg) {
+        return performLSLB(reg); // ASLB and LSLB are identical in 6809
     }
-    result = result & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    
-    int signB = (currentB >> 7) & 0x01;
-    int signOp = (operandValue >> 7) & 0x01;
-    int signRes = (result >> 7) & 0x01;
-    int vFlag = ((signB != signOp) && (signOp == signRes)) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrowOut, reg);
-    
-    return result;
-}
 
-// ==============================================
-// LOGICAL SHIFT METHODS
-// ==============================================
+    // ASRA - Arithmetic Shift Right A (sign extended)
+    private int performASRA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
 
-// LSLA - Logical Shift Left A (same as ASLA)
-private int performLSLA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    
-    // Get bit 7 for carry flag
-    int carryOut = (aValue >> 7) & 0x01;
-    // Shift left
-    int result = (aValue << 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    // V flag: Set if sign changes (bit 7 XOR previous carryOut)
-    int previousBit6 = (aValue >> 6) & 0x01;
-    int vFlag = ((carryOut ^ previousBit6) != 0) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
+        // Save bit 7 (sign bit) for sign extension
+        int signBit = (aValue >> 7) & 0x01;
+        // Get bit 0 for carry flag
+        int carryOut = aValue & 0x01;
 
-// LSLB - Logical Shift Left B (same as ASLB)
-private int performLSLB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    
-    int carryOut = (bValue >> 7) & 0x01;
-    int result = (bValue << 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int previousBit6 = (bValue >> 6) & 0x01;
-    int vFlag = ((carryOut ^ previousBit6) != 0) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
+        // Shift right, extending sign bit
+        int result = (aValue >> 1) | (signBit << 7);
 
-// LSRA - Logical Shift Right A
-private int performLSRA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    
-    // Get bit 0 for carry flag
-    int carryOut = aValue & 0x01;
-    // Shift right, 0 shifted into bit 7
-    int result = (aValue >> 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = 0;  // Always 0 since bit 7 becomes 0
-    int vFlag = 0;  // Always cleared
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
 
-// LSRB - Logical Shift Right B
-private int performLSRB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    
-    int carryOut = bValue & 0x01;
-    int result = (bValue >> 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = 0;
-    int vFlag = 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
-    
-    return result;
-}
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = signBit; // N = sign bit (bit 7)
+        int vFlag = 0; // V is cleared
 
-// === ROTATE INSTRUCTION METHODS ===
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
 
-private int performROLA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int carry = getCarryFlag(reg);
-    
-    // ROLA: C ← bit7 ← bit6 ← ... ← bit0 ← C
-    int newCarry = (aValue >> 7) & 0x01;  // Current bit7 becomes new carry
-    int result = ((aValue << 1) & 0xFF) | carry;  // Shift left, insert old carry at bit0
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = nFlag ^ newCarry;  // V = N XOR C (for rotate)
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
-    
-    return result;
-}
-
-private int performROLB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int carry = getCarryFlag(reg);
-    
-    int newCarry = (bValue >> 7) & 0x01;
-    int result = ((bValue << 1) & 0xFF) | carry;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = nFlag ^ newCarry;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
-    
-    return result;
-}
-
-private int performRORA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int carry = getCarryFlag(reg);
-    
-    // RORA: C → bit7 → bit6 → ... → bit0 → C
-    int newCarry = aValue & 0x01;  // Current bit0 becomes new carry
-    int result = ((aValue >> 1) & 0xFF) | (carry << 7);  // Shift right, insert old carry at bit7
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = nFlag ^ newCarry;  // V = N XOR C
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
-    
-    return result;
-}
-
-private int performRORB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int carry = getCarryFlag(reg);
-    
-    int newCarry = bValue & 0x01;
-    int result = ((bValue >> 1) & 0xFF) | (carry << 7);
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = nFlag ^ newCarry;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
-    
-    return result;
-}
-
-// === SUBROUTINE & INTERRUPT METHODS ===
-
-private int performRTS(registre reg) {
-    // RTS: Pull return address from hardware stack (S)
-    int sValue = Integer.parseInt(reg.getS(), 16);
-    
-    // Pull 2-byte return address
-    String addrHigh = ramMemory.getram().get(String.format("%04X", sValue));
-    String addrLow = ramMemory.getram().get(String.format("%04X", sValue + 1));
-    
-    if (addrHigh == null) addrHigh = "00";
-    if (addrLow == null) addrLow = "00";
-    
-    int returnAddr = Integer.parseInt(addrHigh + addrLow, 16);
-    
-    // Update stack pointer (increment by 2)
-    reg.setS(String.format("%04X", sValue + 2));
-    
-    // Set PC to return address
-    reg.setPC(returnAddr);
-    
-    return returnAddr;
-}
-
-private int performRTI(registre reg) {
-    // RTI: Restore all registers from interrupt
-    // Stack frame AFTER interrupt (S points to CCR):
-    // S → [CCR]   (address 00F7)
-    //     [B]      (00F8)
-    //     [A]      (00F9)
-    //     [X high] (00FA)
-    //     [X low]  (00FB)
-    //     [Y high] (00FC)
-    //     [Y low]  (00FD)
-    //     [PC high] (00FE)
-    //     [PC low]  (00FF)
-    //     [Original S before interrupt = 0100]
-    
-    int sValue = Integer.parseInt(reg.getS(), 16);
-    System.out.println("[RTI] Reading from stack at: " + String.format("%04X", sValue));
-    
-    // 1. CCR (1 byte) - Read THEN increment
-    String ccrVal = ramMemory.getram().get(String.format("%04X", sValue));
-    if (ccrVal == null) ccrVal = "00";
-    System.out.println("  CCR read: " + ccrVal);
-    sValue++;
-    
-    // 2. B (1 byte)
-    String bVal = ramMemory.getram().get(String.format("%04X", sValue));
-    if (bVal == null) bVal = "00";
-    System.out.println("  B read: " + bVal);
-    sValue++;
-    
-    // 3. A (1 byte)
-    String aVal = ramMemory.getram().get(String.format("%04X", sValue));
-    if (aVal == null) aVal = "00";
-    System.out.println("  A read: " + aVal);
-    sValue++;
-    
-    // 4. X (2 bytes - high byte first)
-    String xHigh = ramMemory.getram().get(String.format("%04X", sValue));
-    if (xHigh == null) xHigh = "00";
-    sValue++;
-    
-    String xLow = ramMemory.getram().get(String.format("%04X", sValue));
-    if (xLow == null) xLow = "00";
-    String xVal = xHigh + xLow;
-    System.out.println("  X read: " + xVal);
-    sValue++;
-    
-    // 5. Y (2 bytes - high byte first)
-    String yHigh = ramMemory.getram().get(String.format("%04X", sValue));
-    if (yHigh == null) yHigh = "00";
-    sValue++;
-    
-    String yLow = ramMemory.getram().get(String.format("%04X", sValue));
-    if (yLow == null) yLow = "00";
-    String yVal = yHigh + yLow;
-    System.out.println("  Y read: " + yVal);
-    sValue++;
-    
-    // 6. PC (2 bytes - high byte first)
-    String pcHigh = ramMemory.getram().get(String.format("%04X", sValue));
-    if (pcHigh == null) pcHigh = "00";
-    sValue++;
-    
-    String pcLow = ramMemory.getram().get(String.format("%04X", sValue));
-    if (pcLow == null) pcLow = "00";
-    String pcVal = pcHigh + pcLow;
-    int returnPC = Integer.parseInt(pcVal, 16);
-    System.out.println("  PC read: " + pcVal + " = " + String.format("%04X", returnPC));
-    sValue++;
-    
-    // 7. RESTORE REGISTERS
-    reg.setCCR(ccrVal);
-    reg.setB(bVal);
-    reg.setA(aVal);
-    reg.setX(xVal);
-    reg.setY(yVal);
-    reg.setPC(returnPC);
-    
-    // 8. Update stack pointer (S now points to original position before interrupt)
-    reg.setS(String.format("%04X", sValue & 0xFFFF));
-    System.out.println("[RTI] New S: " + reg.getS() + ", PC: " + reg.getPC());
-    
-    return returnPC;
-}
-
-
-private int performSWI(registre reg) {
-    // SWI: Save all registers to stack IN CORRECT ORDER
-    // Motorola 6809 saves in order: PC, Y, X, A, B, CCR
-    // Stack grows DOWNWARD (decrement first, then store)
-    
-    int sValue = Integer.parseInt(reg.getS(), 16);
-    
-    
-    // ====== SAVE IN CORRECT ORDER ======
-    
-    // 1. Save PC (2 bytes) - HIGH byte first!
-    sValue -= 2;
-    String pcVal = reg.getPC();
-    if (pcVal.length() == 4) {
-        // Store high byte at S, low byte at S+1
-        ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
-        ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
-        
+        return result;
     }
-    
-    // Show registers
-    reg.displayRegisters();
-    
-    // Show registers
-    reg.displayRegisters();
-    
-    
 
-    // 2. Save Y (2 bytes)
-    sValue -= 2;
-    String yVal = reg.getY();
-    if (yVal.length() == 4) {
-        ramMemory.getram().put(String.format("%04X", sValue), yVal.substring(0, 2));
-        ramMemory.getram().put(String.format("%04X", sValue + 1), yVal.substring(2));
-        
+    // ASRB - Arithmetic Shift Right B (sign extended)
+    private int performASRB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+
+        int signBit = (bValue >> 7) & 0x01;
+        int carryOut = bValue & 0x01;
+
+        int result = (bValue >> 1) | (signBit << 7);
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = signBit;
+        int vFlag = 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
     }
-    
-    // 3. Save X (2 bytes)
-    sValue -= 2;
-    String xVal = reg.getX();
-    if (xVal.length() == 4) {
-        ramMemory.getram().put(String.format("%04X", sValue), xVal.substring(0, 2));
-        ramMemory.getram().put(String.format("%04X", sValue + 1), xVal.substring(2));
-        
+
+    // ==============================================
+    // ADD/SUBTRACT WITH CARRY METHODS
+    // ==============================================
+
+    // ADCA - Add with Carry to A
+    private int performADCA(String operand, registre reg) {
+        int currentA = Integer.parseInt(reg.getA(), 16);
+        int operandValue = Integer.parseInt(operand, 16);
+        int carry = getCarryFlag(reg); // Get current carry flag
+
+        // ADCA: A = A + operand + C
+        int result = currentA + operandValue + carry;
+
+        // Handle 8-bit overflow
+        int carryOut = (result > 0xFF) ? 1 : 0;
+        result = result & 0xFF; // Keep only lower 8 bits
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+
+        // V flag: Overflow if both operands same sign but result different sign
+        int signA = (currentA >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signA == signOp) && (signA != signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
     }
-    
-    // 4. Save A (1 byte)
-    sValue -= 1;
-    String aVal = reg.getA();
-    ramMemory.getram().put(String.format("%04X", sValue), aVal);
-    
-    
-    // 5. Save B (1 byte)
-    sValue -= 1;
-    String bVal = reg.getB();
-    ramMemory.getram().put(String.format("%04X", sValue), bVal);
-    
-    
-    // 6. Save CCR (1 byte)
-    sValue -= 1;
-    String ccrVal = reg.getCCR();
-    ramMemory.getram().put(String.format("%04X", sValue), ccrVal);
-    
-    
-    // Update stack pointer
-    reg.setS(String.format("%04X", sValue & 0xFFFF));
-    
-    // Set I flag (bit 4) in CCR to mask interrupts
-    int ccrValue = Integer.parseInt(ccrVal, 16);
-    ccrValue |= 0x10;  // Set I flag (bit 4)
-    reg.setCCR(String.format("%02X", ccrValue));
-    
-    // Jump to SWI vector address (Motorola 6809 uses FFF6-FFF7 for SWI)
-    reg.setPC(0xFFFA);  // This will make PC jump to SWI handler
-    
-    
-    
-    return 0xFFFA;
-}
 
-private int performSWI2(registre reg) {
-    // Similar to SWI but doesn't set I flag
-    return performSWI(reg);  // Simplified - same as SWI without I flag
-}
+    // ADCB - Add with Carry to B
+    private int performADCB(String operand, registre reg) {
+        int currentB = Integer.parseInt(reg.getB(), 16);
+        int operandValue = Integer.parseInt(operand, 16);
+        int carry = getCarryFlag(reg);
 
-private int performSWI3(registre reg) {
-    // Similar to SWI2 with different vector
-    return performSWI(reg);  // Simplified
-}
+        int result = currentB + operandValue + carry;
 
-private int performSYNC(registre reg) {
-    // SYNC: Halt CPU until interrupt
-    // In emulation, we just decrement cycle count and continue
-    // Real implementation would wait for hardware interrupt
-    System.out.println("[SYNC] CPU waiting for interrupt...");
-    return 0;
-}
+        int carryOut = (result > 0xFF) ? 1 : 0;
+        result = result & 0xFF;
 
-// === TEST INSTRUCTION METHODS ===
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
 
-private int performTSTA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    
-    // TSTA doesn't change A, only sets flags
-    int zFlag = (aValue == 0) ? 1 : 0;
-    int nFlag = ((aValue & 0x80) != 0) ? 1 : 0;
-    int vFlag = 0;  // TST clears V flag
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return aValue;
-}
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
 
-private int performTSTB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    
-    int zFlag = (bValue == 0) ? 1 : 0;
-    int nFlag = ((bValue & 0x80) != 0) ? 1 : 0;
-    int vFlag = 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return bValue;
-}
+        int signB = (currentB >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signB == signOp) && (signB != signRes)) ? 1 : 0;
 
-// === DATA CONVERSION METHOD ===
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
 
-private int performSEX(registre reg) {
-    // SEX: Sign-extend B into D (A:B)
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    
-    int signBit = (bValue >> 7) & 0x01;  // Get bit 7 (sign)
-    int aValue;
-    
-    if (signBit == 1) {
-        aValue = 0xFF;  // If negative, A = $FF
-    } else {
-        aValue = 0x00;  // If positive, A = $00
+        return result;
     }
-    
-    String aHex = String.format("%02X", aValue);
-    String bHex = String.format("%02X", bValue);
-    String dHex = aHex + bHex;
-    
-    reg.setA(aHex);
-    reg.setD(dHex);
-    
-    // Set flags
-    int zFlag = (bValue == 0) ? 1 : 0;  // Z based on B (not D)
-    int nFlag = signBit;  // N based on sign bit
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, 0, 0, reg);
-    
-    return Integer.parseInt(dHex, 16);
-}
 
+    // SBCA - Subtract with Carry from A
+    private int performSBCA(String operand, registre reg) {
+        int currentA = Integer.parseInt(reg.getA(), 16);
+        int operandValue = Integer.parseInt(operand, 16);
+        int carry = getCarryFlag(reg); // Note: In subtraction, carry = borrow
 
+        // SBCA: A = A - operand - C
+        int result = currentA - operandValue - carry;
 
+        // Handle underflow (borrow)
+        int borrowOut = (result < 0) ? 1 : 0;
+        if (result < 0) {
+            result += 256; // Two's complement wrap-around
+        }
+        result = result & 0xFF;
 
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+
+        // V flag for subtraction: Overflow if signs differ and result sign = operand
+        // sign
+        int signA = (currentA >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signA != signOp) && (signOp == signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrowOut, reg);
+
+        return result;
+    }
+
+    // SBCB - Subtract with Carry from B
+    private int performSBCB(String operand, registre reg) {
+        int currentB = Integer.parseInt(reg.getB(), 16);
+        int operandValue = Integer.parseInt(operand, 16);
+        int carry = getCarryFlag(reg);
+
+        int result = currentB - operandValue - carry;
+
+        int borrowOut = (result < 0) ? 1 : 0;
+        if (result < 0) {
+            result += 256;
+        }
+        result = result & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+
+        int signB = (currentB >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signB != signOp) && (signOp == signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrowOut, reg);
+
+        return result;
+    }
+
+    // ==============================================
+    // LOGICAL SHIFT METHODS
+    // ==============================================
+
+    // LSLA - Logical Shift Left A (same as ASLA)
+    private int performLSLA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+
+        // Get bit 7 for carry flag
+        int carryOut = (aValue >> 7) & 0x01;
+        // Shift left
+        int result = (aValue << 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        // V flag: Set if sign changes (bit 7 XOR previous carryOut)
+        int previousBit6 = (aValue >> 6) & 0x01;
+        int vFlag = ((carryOut ^ previousBit6) != 0) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
+    }
+
+    // LSLB - Logical Shift Left B (same as ASLB)
+    private int performLSLB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+
+        int carryOut = (bValue >> 7) & 0x01;
+        int result = (bValue << 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int previousBit6 = (bValue >> 6) & 0x01;
+        int vFlag = ((carryOut ^ previousBit6) != 0) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
+    }
+
+    // LSRA - Logical Shift Right A
+    private int performLSRA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+
+        // Get bit 0 for carry flag
+        int carryOut = aValue & 0x01;
+        // Shift right, 0 shifted into bit 7
+        int result = (aValue >> 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = 0; // Always 0 since bit 7 becomes 0
+        int vFlag = 0; // Always cleared
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
+    }
+
+    // LSRB - Logical Shift Right B
+    private int performLSRB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+
+        int carryOut = bValue & 0x01;
+        int result = (bValue >> 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = 0;
+        int vFlag = 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
+
+        return result;
+    }
+
+    // === ROTATE INSTRUCTION METHODS ===
+
+    private int performROLA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int carry = getCarryFlag(reg);
+
+        // ROLA: C ← bit7 ← bit6 ← ... ← bit0 ← C
+        int newCarry = (aValue >> 7) & 0x01; // Current bit7 becomes new carry
+        int result = ((aValue << 1) & 0xFF) | carry; // Shift left, insert old carry at bit0
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = nFlag ^ newCarry; // V = N XOR C (for rotate)
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
+
+        return result;
+    }
+
+    private int performROLB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int carry = getCarryFlag(reg);
+
+        int newCarry = (bValue >> 7) & 0x01;
+        int result = ((bValue << 1) & 0xFF) | carry;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = nFlag ^ newCarry;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
+
+        return result;
+    }
+
+    private int performRORA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int carry = getCarryFlag(reg);
+
+        // RORA: C → bit7 → bit6 → ... → bit0 → C
+        int newCarry = aValue & 0x01; // Current bit0 becomes new carry
+        int result = ((aValue >> 1) & 0xFF) | (carry << 7); // Shift right, insert old carry at bit7
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = nFlag ^ newCarry; // V = N XOR C
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
+
+        return result;
+    }
+
+    private int performRORB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int carry = getCarryFlag(reg);
+
+        int newCarry = bValue & 0x01;
+        int result = ((bValue >> 1) & 0xFF) | (carry << 7);
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = nFlag ^ newCarry;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, newCarry, reg);
+
+        return result;
+    }
+
+    // === SUBROUTINE & INTERRUPT METHODS ===
+
+    private int performRTS(registre reg) {
+        // RTS: Pull return address from hardware stack (S)
+        int sValue = Integer.parseInt(reg.getS(), 16);
+
+        // Pull 2-byte return address
+        String addrHigh = ramMemory.getram().get(String.format("%04X", sValue));
+        String addrLow = ramMemory.getram().get(String.format("%04X", sValue + 1));
+
+        if (addrHigh == null)
+            addrHigh = "00";
+        if (addrLow == null)
+            addrLow = "00";
+
+        int returnAddr = Integer.parseInt(addrHigh + addrLow, 16);
+
+        // Update stack pointer (increment by 2)
+        reg.setS(String.format("%04X", sValue + 2));
+
+        // Set PC to return address
+        reg.setPC(returnAddr);
+
+        return returnAddr;
+    }
+
+    private int performRTI(registre reg) {
+        // RTI: Restore all registers from interrupt
+        // Stack frame AFTER interrupt (S points to CCR):
+        // S → [CCR] (address 00F7)
+        // [B] (00F8)
+        // [A] (00F9)
+        // [X high] (00FA)
+        // [X low] (00FB)
+        // [Y high] (00FC)
+        // [Y low] (00FD)
+        // [PC high] (00FE)
+        // [PC low] (00FF)
+        // [Original S before interrupt = 0100]
+
+        int sValue = Integer.parseInt(reg.getS(), 16);
+        System.out.println("[RTI] Reading from stack at: " + String.format("%04X", sValue));
+
+        // 1. CCR (1 byte) - Read THEN increment
+        String ccrVal = ramMemory.getram().get(String.format("%04X", sValue));
+        if (ccrVal == null)
+            ccrVal = "00";
+        System.out.println("  CCR read: " + ccrVal);
+        sValue++;
+
+        // 2. B (1 byte)
+        String bVal = ramMemory.getram().get(String.format("%04X", sValue));
+        if (bVal == null)
+            bVal = "00";
+        System.out.println("  B read: " + bVal);
+        sValue++;
+
+        // 3. A (1 byte)
+        String aVal = ramMemory.getram().get(String.format("%04X", sValue));
+        if (aVal == null)
+            aVal = "00";
+        System.out.println("  A read: " + aVal);
+        sValue++;
+
+        // 4. X (2 bytes - high byte first)
+        String xHigh = ramMemory.getram().get(String.format("%04X", sValue));
+        if (xHigh == null)
+            xHigh = "00";
+        sValue++;
+
+        String xLow = ramMemory.getram().get(String.format("%04X", sValue));
+        if (xLow == null)
+            xLow = "00";
+        String xVal = xHigh + xLow;
+        System.out.println("  X read: " + xVal);
+        sValue++;
+
+        // 5. Y (2 bytes - high byte first)
+        String yHigh = ramMemory.getram().get(String.format("%04X", sValue));
+        if (yHigh == null)
+            yHigh = "00";
+        sValue++;
+
+        String yLow = ramMemory.getram().get(String.format("%04X", sValue));
+        if (yLow == null)
+            yLow = "00";
+        String yVal = yHigh + yLow;
+        System.out.println("  Y read: " + yVal);
+        sValue++;
+
+        // 6. PC (2 bytes - high byte first)
+        String pcHigh = ramMemory.getram().get(String.format("%04X", sValue));
+        if (pcHigh == null)
+            pcHigh = "00";
+        sValue++;
+
+        String pcLow = ramMemory.getram().get(String.format("%04X", sValue));
+        if (pcLow == null)
+            pcLow = "00";
+        String pcVal = pcHigh + pcLow;
+        int returnPC = Integer.parseInt(pcVal, 16);
+        System.out.println("  PC read: " + pcVal + " = " + String.format("%04X", returnPC));
+        sValue++;
+
+        // 7. RESTORE REGISTERS
+        reg.setCCR(ccrVal);
+        reg.setB(bVal);
+        reg.setA(aVal);
+        reg.setX(xVal);
+        reg.setY(yVal);
+        reg.setPC(returnPC);
+
+        // 8. Update stack pointer (S now points to original position before interrupt)
+        reg.setS(String.format("%04X", sValue & 0xFFFF));
+        System.out.println("[RTI] New S: " + reg.getS() + ", PC: " + reg.getPC());
+
+        return returnPC;
+    }
+
+    private int performSWI(registre reg) {
+        // SWI: Save all registers to stack IN CORRECT ORDER
+        // Motorola 6809 saves in order: PC, Y, X, A, B, CCR
+        // Stack grows DOWNWARD (decrement first, then store)
+
+        int sValue = Integer.parseInt(reg.getS(), 16);
+
+        // ====== SAVE IN CORRECT ORDER ======
+
+        // 1. Save PC (2 bytes) - HIGH byte first!
+        sValue -= 2;
+        String pcVal = reg.getPC();
+        if (pcVal.length() == 4) {
+            // Store high byte at S, low byte at S+1
+            ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
+            ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
+
+        }
+
+        // Show registers
+        reg.displayRegisters();
+
+        // Show registers
+        reg.displayRegisters();
+
+        // 2. Save Y (2 bytes)
+        sValue -= 2;
+        String yVal = reg.getY();
+        if (yVal.length() == 4) {
+            ramMemory.getram().put(String.format("%04X", sValue), yVal.substring(0, 2));
+            ramMemory.getram().put(String.format("%04X", sValue + 1), yVal.substring(2));
+
+        }
+
+        // 3. Save X (2 bytes)
+        sValue -= 2;
+        String xVal = reg.getX();
+        if (xVal.length() == 4) {
+            ramMemory.getram().put(String.format("%04X", sValue), xVal.substring(0, 2));
+            ramMemory.getram().put(String.format("%04X", sValue + 1), xVal.substring(2));
+
+        }
+
+        // 4. Save A (1 byte)
+        sValue -= 1;
+        String aVal = reg.getA();
+        ramMemory.getram().put(String.format("%04X", sValue), aVal);
+
+        // 5. Save B (1 byte)
+        sValue -= 1;
+        String bVal = reg.getB();
+        ramMemory.getram().put(String.format("%04X", sValue), bVal);
+
+        // 6. Save CCR (1 byte)
+        sValue -= 1;
+        String ccrVal = reg.getCCR();
+        ramMemory.getram().put(String.format("%04X", sValue), ccrVal);
+
+        // Update stack pointer
+        reg.setS(String.format("%04X", sValue & 0xFFFF));
+
+        // Set I flag (bit 4) in CCR to mask interrupts
+        int ccrValue = Integer.parseInt(ccrVal, 16);
+        ccrValue |= 0x10; // Set I flag (bit 4)
+        reg.setCCR(String.format("%02X", ccrValue));
+
+        // Jump to SWI vector address (Motorola 6809 uses FFF6-FFF7 for SWI)
+        reg.setPC(0xFFFA); // This will make PC jump to SWI handler
+
+        return 0xFFFA;
+    }
+
+    private int performSWI2(registre reg) {
+        // Similar to SWI but doesn't set I flag
+        return performSWI(reg); // Simplified - same as SWI without I flag
+    }
+
+    private int performSWI3(registre reg) {
+        // Similar to SWI2 with different vector
+        return performSWI(reg); // Simplified
+    }
+
+    private int performSYNC(registre reg) {
+        // SYNC: Halt CPU until interrupt
+        // In emulation, we just decrement cycle count and continue
+        // Real implementation would wait for hardware interrupt
+        System.out.println("[SYNC] CPU waiting for interrupt...");
+        return 0;
+    }
+
+    // === TEST INSTRUCTION METHODS ===
+
+    private int performTSTA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+
+        // TSTA doesn't change A, only sets flags
+        int zFlag = (aValue == 0) ? 1 : 0;
+        int nFlag = ((aValue & 0x80) != 0) ? 1 : 0;
+        int vFlag = 0; // TST clears V flag
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
+
+        return aValue;
+    }
+
+    private int performTSTB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+
+        int zFlag = (bValue == 0) ? 1 : 0;
+        int nFlag = ((bValue & 0x80) != 0) ? 1 : 0;
+        int vFlag = 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
+
+        return bValue;
+    }
+
+    // === DATA CONVERSION METHOD ===
+
+    private int performSEX(registre reg) {
+        // SEX: Sign-extend B into D (A:B)
+        int bValue = Integer.parseInt(reg.getB(), 16);
+
+        int signBit = (bValue >> 7) & 0x01; // Get bit 7 (sign)
+        int aValue;
+
+        if (signBit == 1) {
+            aValue = 0xFF; // If negative, A = $FF
+        } else {
+            aValue = 0x00; // If positive, A = $00
+        }
+
+        String aHex = String.format("%02X", aValue);
+        String bHex = String.format("%02X", bValue);
+        String dHex = aHex + bHex;
+
+        reg.setA(aHex);
+        reg.setD(dHex);
+
+        // Set flags
+        int zFlag = (bValue == 0) ? 1 : 0; // Z based on B (not D)
+        int nFlag = signBit; // N based on sign bit
+
+        updateCCRBasedOnFlags(zFlag, nFlag, 0, 0, reg);
+
+        return Integer.parseInt(dHex, 16);
+    }
+
+    // ==============================================
+    // TFR / EXG INSTRUCTION METHODS (PHASE SPECIAL)
+    // ==============================================
+
+    /**
+     * Get 4-bit code for register (Post-byte encoding)
+     */
+    private int getRegisterCode(String regName) {
+        switch (regName.toUpperCase()) {
+            case "D":
+                return 0b0000; // 0
+            case "X":
+                return 0b0001; // 1
+            case "Y":
+                return 0b0010; // 2
+            case "U":
+                return 0b0011; // 3
+            case "S":
+                return 0b0100; // 4
+            case "PC":
+                return 0b0101; // 5
+            case "A":
+                return 0b1000; // 8
+            case "B":
+                return 0b1001; // 9
+            case "CC":
+                return 0b1010; // A
+            case "DP":
+                return 0b1011; // B
+            default:
+                return -1;
+        }
+    }
+
+    /**
+     * Check if register is 16-bit
+     */
+    private boolean is16BitRegister(String regName) {
+        int code = getRegisterCode(regName);
+        // Codes 0-5 are 16-bit, Codes 8-11 are 8-bit
+        return code <= 5;
+    }
+
+    private String getRegisterValue(String regName, registre reg) {
+        switch (regName.toUpperCase()) {
+            case "D":
+                return reg.getD();
+            case "X":
+                return reg.getX();
+            case "Y":
+                return reg.getY();
+            case "U":
+                return reg.getU();
+            case "S":
+                return reg.getS();
+            case "PC":
+                return reg.getPC();
+            case "A":
+                return reg.getA();
+            case "B":
+                return reg.getB();
+            case "CC":
+                return reg.getCCR();
+            // DP not implemented fully, return 00
+            case "DP":
+                return "00";
+            default:
+                return "00";
+        }
+    }
+
+    private void setRegisterValue(String regName, String val, registre reg) {
+        switch (regName.toUpperCase()) {
+            case "D":
+                reg.setD(val);
+                break;
+            case "X":
+                reg.setX(val);
+                break;
+            case "Y":
+                reg.setY(val);
+                break;
+            case "U":
+                reg.setU(val);
+                break;
+            case "S":
+                reg.setS(val);
+                break;
+            case "PC":
+                reg.setPC(Integer.parseInt(val, 16));
+                break;
+            case "A":
+                reg.setA(val);
+                break;
+            case "B":
+                reg.setB(val);
+                break;
+            case "CC":
+                reg.setCCR(val);
+                break;
+            // DP ignored for now
+        }
+    }
+
+    private String performTFR(String operands, registre reg) {
+        String[] parts = operands.split(",");
+        if (parts.length != 2)
+            return "00";
+
+        String r1 = parts[0].trim();
+        String r2 = parts[1].trim();
+
+        // Validation: Must be same size
+        boolean r1Is16 = is16BitRegister(r1);
+        boolean r2Is16 = is16BitRegister(r2);
+
+        if (r1Is16 != r2Is16) {
+            System.out.println("ERROR: TFR size mismatch (" + r1 + "->" + r2 + ")");
+            return "00"; // Invalid TFR
+        }
+
+        // Transfer value
+        String val = getRegisterValue(r1, reg);
+        setRegisterValue(r2, val, reg);
+
+        // Generate Post-byte
+        int code1 = getRegisterCode(r1);
+        int code2 = getRegisterCode(r2);
+        int postByte = (code1 << 4) | code2;
+
+        return String.format("%02X", postByte);
+    }
+
+    private String performEXG(String operands, registre reg) {
+        String[] parts = operands.split(",");
+        if (parts.length != 2)
+            return "00";
+
+        String r1 = parts[0].trim();
+        String r2 = parts[1].trim();
+
+        // Validation: Must be same size
+        boolean r1Is16 = is16BitRegister(r1);
+        boolean r2Is16 = is16BitRegister(r2);
+
+        if (r1Is16 != r2Is16) {
+            System.out.println("ERROR: EXG size mismatch (" + r1 + "<->" + r2 + ")");
+            return "00";
+        }
+
+        // Exchange values
+        String val1 = getRegisterValue(r1, reg);
+        String val2 = getRegisterValue(r2, reg);
+
+        setRegisterValue(r1, val2, reg);
+        setRegisterValue(r2, val1, reg);
+
+        // Generate Post-byte
+        int code1 = getRegisterCode(r1);
+        int code2 = getRegisterCode(r2);
+        int postByte = (code1 << 4) | code2;
+
+        return String.format("%02X", postByte);
+    }
 
     // Simple stack simulation in memory (using RAM)
     private void pushToMemory(String address, String value, ram memory) {
@@ -1695,249 +1871,229 @@ private int performSEX(registre reg) {
         return "00";
     }
 
-
     // === INHERENT MODE METHODS ===
 
+    // === UPDATE EXISTING INHERENT METHODS ===
+    // Modify performDECA to calculate and set flags
+    private int performDECA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = (aValue - 1) & 0xFF;
 
-
-
-// === UPDATE EXISTING INHERENT METHODS ===
-// Modify performDECA to calculate and set flags
-private int performDECA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int result = (aValue - 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (aValue == 0x80) ? 1 : 0; // Overflow if decrementing from 0x80
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return result;
-}
-
-private int performDAA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int result = aValue;
-    int originalCarry = getCarryFlag(reg);
-    int adjust = 0;
-    
-    // Get half-carry flag (H flag is bit 5 in CCR)
-    int halfCarry = getHalfCarryFlag(reg);
-    
-    // Step 1: Check lower nibble (bits 3-0)
-    if (((aValue & 0x0F) > 9) || halfCarry == 1) {
-        adjust += 0x06;
-    }
-    
-    // Step 2: Check upper nibble (bits 7-4) - FIXED!
-    // The bug was: checking (aValue > 0x9F) instead of ((aValue & 0xF0) > 0x90)
-    if (((aValue & 0xF0) > 0x90) || originalCarry == 1) {
-        adjust += 0x60;
-    }
-    
-    // Apply adjustment
-    if (adjust != 0) {
-        result = (aValue + adjust) & 0xFF;
-    }
-    
-    // Calculate flags CORRECTLY:
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = 0; // DAA doesn't affect V
-    
-    // C flag: Set if we added 0x60 OR original carry was set
-    int cFlag = (originalCarry == 1 || adjust >= 0x60) ? 1 : 0;
-    
-    // Only update register if adjustment was made
-    if (adjust != 0) {
         String resultHex = String.format("%02X", result);
         reg.setA(resultHex);
-    }
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
-    
-    return result;
-}
 
-private void setCarryFlag(registre reg, int carry) {
-    // Get current CCR value
-    String ccrStr = reg.getCCR();
-    int ccrValue = 0;
-    
-    if (ccrStr != null && !ccrStr.isEmpty()) {
-        try {
-            ccrValue = Integer.parseInt(ccrStr, 16);
-        } catch (Exception e) {
-            ccrValue = 0;
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (aValue == 0x80) ? 1 : 0; // Overflow if decrementing from 0x80
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
+
+        return result;
+    }
+
+    private int performDAA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = aValue;
+        int originalCarry = getCarryFlag(reg);
+        int adjust = 0;
+
+        // Get half-carry flag (H flag is bit 5 in CCR)
+        int halfCarry = getHalfCarryFlag(reg);
+
+        // Step 1: Check lower nibble (bits 3-0)
+        if (((aValue & 0x0F) > 9) || halfCarry == 1) {
+            adjust += 0x06;
         }
+
+        // Step 2: Check upper nibble (bits 7-4) - FIXED!
+        // The bug was: checking (aValue > 0x9F) instead of ((aValue & 0xF0) > 0x90)
+        if (((aValue & 0xF0) > 0x90) || originalCarry == 1) {
+            adjust += 0x60;
+        }
+
+        // Apply adjustment
+        if (adjust != 0) {
+            result = (aValue + adjust) & 0xFF;
+        }
+
+        // Calculate flags CORRECTLY:
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = 0; // DAA doesn't affect V
+
+        // C flag: Set if we added 0x60 OR original carry was set
+        int cFlag = (originalCarry == 1 || adjust >= 0x60) ? 1 : 0;
+
+        // Only update register if adjustment was made
+        if (adjust != 0) {
+            String resultHex = String.format("%02X", result);
+            reg.setA(resultHex);
+        }
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
+
+        return result;
     }
-    
-    // Set or clear ONLY the carry bit (bit 0)
-    if (carry == 1) {
-        ccrValue |= 0x01;  // Set bit 0 (carry flag)
-    } else {
-        ccrValue &= ~0x01; // Clear bit 0 (carry flag)
+
+    private void setCarryFlag(registre reg, int carry) {
+        // Get current CCR value
+        String ccrStr = reg.getCCR();
+        int ccrValue = 0;
+
+        if (ccrStr != null && !ccrStr.isEmpty()) {
+            try {
+                ccrValue = Integer.parseInt(ccrStr, 16);
+            } catch (Exception e) {
+                ccrValue = 0;
+            }
+        }
+
+        // Set or clear ONLY the carry bit (bit 0)
+        if (carry == 1) {
+            ccrValue |= 0x01; // Set bit 0 (carry flag)
+        } else {
+            ccrValue &= ~0x01; // Clear bit 0 (carry flag)
+        }
+
+        // Preserve all other flags (Z, N, V, H, etc.)
+        reg.setCCR(String.format("%02X", ccrValue));
     }
-    
-    // Preserve all other flags (Z, N, V, H, etc.)
-    reg.setCCR(String.format("%02X", ccrValue));
-}
 
-// Modify performINCB to calculate and set flags
-private int performINCB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int result = (bValue + 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (bValue == 0x7F) ? 1 : 0; // Overflow if incrementing from 0x7F
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return result;
-}
+    // Modify performINCB to calculate and set flags
+    private int performINCB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = (bValue + 1) & 0xFF;
 
-// Modify performCLRA to calculate and set flags
-private int performCLRA(registre reg) {
-    reg.setA("00");
-    
-    // Calculate flags: Z=1, N=0, V=0, C=0
-    updateCCRBasedOnFlags(1, 0, 0, 0, reg);
-    
-    return 0;
-}
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
 
-// Modify performCOMB to calculate and set flags
-private int performCOMB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int result = (~bValue) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = 0; // COM never sets V
-    int cFlag = 1; // COM always sets C
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
-    
-    return result;
-}
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (bValue == 0x7F) ? 1 : 0; // Overflow if incrementing from 0x7F
 
-// === UPDATE OTHER INHERENT METHODS SIMILARLY ===
-// You should also update these methods similarly:
-// performDECB, performINCA, performCOMA, performNEGA, performNEGB, performDAA, performMUL
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
 
-// Example for DECB:
-private int performDECB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int result = (bValue - 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (bValue == 0x80) ? 1 : 0; // Overflow if decrementing from 0x80
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return result;
-}
-
-// Example for INCA:
-private int performINCA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int result = (aValue + 1) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (aValue == 0x7F) ? 1 : 0; // Overflow if incrementing from 0x7F
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
-    
-    return result;
-}
-
-// ABX - Add B to X (unsigned)
-private int performABX(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int xValue = Integer.parseInt(reg.getX(), 16);
-    int result = (xValue + bValue) & 0xFFFF; // Keep 16-bit
-    
-    String resultHex = String.format("%04X", result);
-    reg.setX(resultHex);
-    return result;
-}
-
-
-
-// CLRB - Clear Accumulator B
-private int performCLRB(registre reg) {
-    reg.setB("00");
-    return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-// MUL - Multiply A × B (unsigned)
-private int performMUL(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int result = aValue * bValue; // 8-bit × 8-bit = 16-bit result
-    
-    // Store in D (A:B) where A = high byte, B = low byte
-    int highByte = (result >> 8) & 0xFF;
-    int lowByte = result & 0xFF;
-    
-    String highHex = String.format("%02X", highByte);
-    String lowHex = String.format("%02X", lowByte);
-    String dHex = highHex + lowHex;
-    
-    reg.setA(highHex);
-    reg.setB(lowHex);
-    reg.setD(dHex);
-    
-    // Set carry flag if high byte is non-zero
-    if (highByte != 0) {
-        setCarryFlag(reg, 1);
-    } else {
-        setCarryFlag(reg, 0);
+        return result;
     }
-    
-    return result;
-}
 
+    // Modify performCLRA to calculate and set flags
+    private int performCLRA(registre reg) {
+        reg.setA("00");
 
+        // Calculate flags: Z=1, N=0, V=0, C=0
+        updateCCRBasedOnFlags(1, 0, 0, 0, reg);
 
+        return 0;
+    }
 
+    // Modify performCOMB to calculate and set flags
+    private int performCOMB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = (~bValue) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = 0; // COM never sets V
+        int cFlag = 1; // COM always sets C
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
+
+        return result;
+    }
+
+    // === UPDATE OTHER INHERENT METHODS SIMILARLY ===
+    // You should also update these methods similarly:
+    // performDECB, performINCA, performCOMA, performNEGA, performNEGB, performDAA,
+    // performMUL
+
+    // Example for DECB:
+    private int performDECB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = (bValue - 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (bValue == 0x80) ? 1 : 0; // Overflow if decrementing from 0x80
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
+
+        return result;
+    }
+
+    // Example for INCA:
+    private int performINCA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = (aValue + 1) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (aValue == 0x7F) ? 1 : 0; // Overflow if incrementing from 0x7F
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, 0, reg);
+
+        return result;
+    }
+
+    // ABX - Add B to X (unsigned)
+    private int performABX(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int xValue = Integer.parseInt(reg.getX(), 16);
+        int result = (xValue + bValue) & 0xFFFF; // Keep 16-bit
+
+        String resultHex = String.format("%04X", result);
+        reg.setX(resultHex);
+        return result;
+    }
+
+    // CLRB - Clear Accumulator B
+    private int performCLRB(registre reg) {
+        reg.setB("00");
+        return 0;
+    }
+
+    // MUL - Multiply A × B (unsigned)
+    private int performMUL(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = aValue * bValue; // 8-bit × 8-bit = 16-bit result
+
+        // Store in D (A:B) where A = high byte, B = low byte
+        int highByte = (result >> 8) & 0xFF;
+        int lowByte = result & 0xFF;
+
+        String highHex = String.format("%02X", highByte);
+        String lowHex = String.format("%02X", lowByte);
+        String dHex = highHex + lowHex;
+
+        reg.setA(highHex);
+        reg.setB(lowHex);
+        reg.setD(dHex);
+
+        // Set carry flag if high byte is non-zero
+        if (highByte != 0) {
+            setCarryFlag(reg, 1);
+        } else {
+            setCarryFlag(reg, 0);
+        }
+
+        return result;
+    }
 
     // PSHS - Push onto S stack
-
 
     // PSHU - Push onto U stack
     private int performPushU(String operand, registre reg) {
@@ -2264,57 +2420,53 @@ private int performMUL(registre reg) {
         return result;
     }
 
-  
-private void updateCCRBasedOnFlags(int z, int n, int v, int c, registre reg) {
-    // Get current CCR value
-    String ccrStr = reg.getCCR();
-    int ccrValue = 0;
-    
-    if (ccrStr != null && !ccrStr.isEmpty()) {
-        try {
-            ccrValue = Integer.parseInt(ccrStr, 16);
-        } catch (Exception e) {
-            ccrValue = 0;
+    private void updateCCRBasedOnFlags(int z, int n, int v, int c, registre reg) {
+        // Get current CCR value
+        String ccrStr = reg.getCCR();
+        int ccrValue = 0;
+
+        if (ccrStr != null && !ccrStr.isEmpty()) {
+            try {
+                ccrValue = Integer.parseInt(ccrStr, 16);
+            } catch (Exception e) {
+                ccrValue = 0;
+            }
         }
-    }
-    
-    // Update ONLY the specified flags, preserve others
-    
-    // Z flag (bit 2 = 0x04)
-    if (z == 1) {
-        ccrValue |= 0x04;  // Set Z flag
-    } else if (z == 0) {
-        ccrValue &= ~0x04; // Clear Z flag
-    }
-    // (if z == -1, leave unchanged)
-    
-    // N flag (bit 3 = 0x08)
-    if (n == 1) {
-        ccrValue |= 0x08;  // Set N flag
-    } else if (n == 0) {
-        ccrValue &= ~0x08; // Clear N flag
-    }
-    
-    // V flag (bit 1 = 0x02)
-    if (v == 1) {
-        ccrValue |= 0x02;  // Set V flag
-    } else if (v == 0) {
-        ccrValue &= ~0x02; // Clear V flag
-    }
-    
-    // C flag (bit 0 = 0x01)
-    if (c == 1) {
-        ccrValue |= 0x01;  // Set C flag
-    } else if (c == 0) {
-        ccrValue &= ~0x01; // Clear C flag
-    }
-    
-    // Save updated CCR
-    reg.setCCR(String.format("%02X", ccrValue));
-}
-   
 
+        // Update ONLY the specified flags, preserve others
 
+        // Z flag (bit 2 = 0x04)
+        if (z == 1) {
+            ccrValue |= 0x04; // Set Z flag
+        } else if (z == 0) {
+            ccrValue &= ~0x04; // Clear Z flag
+        }
+        // (if z == -1, leave unchanged)
+
+        // N flag (bit 3 = 0x08)
+        if (n == 1) {
+            ccrValue |= 0x08; // Set N flag
+        } else if (n == 0) {
+            ccrValue &= ~0x08; // Clear N flag
+        }
+
+        // V flag (bit 1 = 0x02)
+        if (v == 1) {
+            ccrValue |= 0x02; // Set V flag
+        } else if (v == 0) {
+            ccrValue &= ~0x02; // Clear V flag
+        }
+
+        // C flag (bit 0 = 0x01)
+        if (c == 1) {
+            ccrValue |= 0x01; // Set C flag
+        } else if (c == 0) {
+            ccrValue &= ~0x01; // Clear C flag
+        }
+
+        // Save updated CCR
+        reg.setCCR(String.format("%02X", ccrValue));
+    }
 
     private int performAdditionA(String operand, registre reg) {
         int currentA = Integer.parseInt(reg.getA(), 16);
@@ -2658,120 +2810,123 @@ private void updateCCRBasedOnFlags(int z, int n, int v, int c, registre reg) {
             System.out.println();
         }
     }
- 
 
     private int performCOMA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int result = (~aValue) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = 0; // COM never sets V
-    int cFlag = 1; // COM always sets C
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
-    
-    return result;
-}
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = (~aValue) & 0xFF;
 
-private int performNEGA(registre reg) {
-    int aValue = Integer.parseInt(reg.getA(), 16);
-    int result = (0 - aValue) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setA(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (aValue == 0x80) ? 1 : 0; // Overflow if original was 0x80
-    int cFlag = (result != 0 || aValue == 0x80) ? 1 : 0; // Set if result non-zero or original was 0x80
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
-    
-    return result;
-}
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
 
-private int performNEGB(registre reg) {
-    int bValue = Integer.parseInt(reg.getB(), 16);
-    int result = (0 - bValue) & 0xFF;
-    
-    String resultHex = String.format("%02X", result);
-    reg.setB(resultHex);
-    
-    // Calculate flags
-    int zFlag = (result == 0) ? 1 : 0;
-    int nFlag = ((result & 0x80) != 0) ? 1 : 0;
-    int vFlag = (bValue == 0x80) ? 1 : 0;
-    int cFlag = (result != 0 || bValue == 0x80) ? 1 : 0;
-    
-    updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
-    
-    return result;
-}
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = 0; // COM never sets V
+        int cFlag = 1; // COM always sets C
 
-private int getCarryFlag(registre reg) {
-    String ccr = reg.getCCR();
-    if (ccr == null || ccr.equals("00")) {
-        return 0;
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
+
+        return result;
     }
-    try {
-        // CORRECT: Parse hex, check bit 0
-        int ccrValue = Integer.parseInt(ccr, 16);
-        return (ccrValue & 0x01); // Bit 0 is carry flag
-    } catch (Exception e) {
-        return 0;
+
+    private int performNEGA(registre reg) {
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = (0 - aValue) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setA(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (aValue == 0x80) ? 1 : 0; // Overflow if original was 0x80
+        int cFlag = (result != 0 || aValue == 0x80) ? 1 : 0; // Set if result non-zero or original was 0x80
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
+
+        return result;
     }
-}
 
-// Helper method for half-carry flag (needed for DAA)
-private int getHalfCarryFlag(registre reg) {
-    String ccr = reg.getCCR();
-    if (ccr.equals("00")) return 0;
-    try {
-        // H is bit 5 in CCR (value 0x20)
-        int ccrValue = Integer.parseInt(ccr, 16);
-        return (ccrValue & 0x20) != 0 ? 1 : 0;
-    } catch (Exception e) {
-        return 0;
+    private int performNEGB(registre reg) {
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = (0 - bValue) & 0xFF;
+
+        String resultHex = String.format("%02X", result);
+        reg.setB(resultHex);
+
+        // Calculate flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int vFlag = (bValue == 0x80) ? 1 : 0;
+        int cFlag = (result != 0 || bValue == 0x80) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, cFlag, reg);
+
+        return result;
     }
-}
 
-
-// === REPLACE YOUR EXISTING calculateLastInstructionFlags METHOD ===
-public void calculateLastInstructionFlags() {
-    if (!lastInstructionHex.isEmpty() && this.reg != null) {
-        calculateSelectedFlags(lastInstructionHex, lastInstructionResult, lastInstructionFlags, reg);
-    } else if (lastInstructionFlags.length > 0) {
-        // For inherent instructions, we need a different approach
-        System.out.println("\n=== INHERENT INSTRUCTION FLAGS ===");
-        System.out.print("Flags affected: ");
-        for (String flag : lastInstructionFlags) {
-            System.out.print(flag + " ");
-        }
-        System.out.println();
-        
-        // Get current CCR to show flags
+    private int getCarryFlag(registre reg) {
         String ccr = reg.getCCR();
-        if (!ccr.equals("00")) {
-            int ccrValue = Integer.parseInt(ccr, 16);
-            System.out.println("Current CCR: " + ccr + " (binary: " + 
-                              String.format("%8s", Integer.toBinaryString(ccrValue)).replace(' ', '0') + ")");
-            System.out.print("Active flags: ");
-            if ((ccrValue & 0x08) != 0) System.out.print("N ");
-            if ((ccrValue & 0x04) != 0) System.out.print("Z ");
-            if ((ccrValue & 0x02) != 0) System.out.print("V ");
-            if ((ccrValue & 0x01) != 0) System.out.print("C ");
-            System.out.println();
+        if (ccr == null || ccr.equals("00")) {
+            return 0;
         }
-    } else {
-        System.out.println("\n=== NO INSTRUCTIONS TO CALCULATE FLAGS ===");
+        try {
+            // CORRECT: Parse hex, check bit 0
+            int ccrValue = Integer.parseInt(ccr, 16);
+            return (ccrValue & 0x01); // Bit 0 is carry flag
+        } catch (Exception e) {
+            return 0;
+        }
     }
-}
+
+    // Helper method for half-carry flag (needed for DAA)
+    private int getHalfCarryFlag(registre reg) {
+        String ccr = reg.getCCR();
+        if (ccr.equals("00"))
+            return 0;
+        try {
+            // H is bit 5 in CCR (value 0x20)
+            int ccrValue = Integer.parseInt(ccr, 16);
+            return (ccrValue & 0x20) != 0 ? 1 : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // === REPLACE YOUR EXISTING calculateLastInstructionFlags METHOD ===
+    public void calculateLastInstructionFlags() {
+        if (!lastInstructionHex.isEmpty() && this.reg != null) {
+            calculateSelectedFlags(lastInstructionHex, lastInstructionResult, lastInstructionFlags, reg);
+        } else if (lastInstructionFlags.length > 0) {
+            // For inherent instructions, we need a different approach
+            System.out.println("\n=== INHERENT INSTRUCTION FLAGS ===");
+            System.out.print("Flags affected: ");
+            for (String flag : lastInstructionFlags) {
+                System.out.print(flag + " ");
+            }
+            System.out.println();
+
+            // Get current CCR to show flags
+            String ccr = reg.getCCR();
+            if (!ccr.equals("00")) {
+                int ccrValue = Integer.parseInt(ccr, 16);
+                System.out.println("Current CCR: " + ccr + " (binary: " +
+                        String.format("%8s", Integer.toBinaryString(ccrValue)).replace(' ', '0') + ")");
+                System.out.print("Active flags: ");
+                if ((ccrValue & 0x08) != 0)
+                    System.out.print("N ");
+                if ((ccrValue & 0x04) != 0)
+                    System.out.print("Z ");
+                if ((ccrValue & 0x02) != 0)
+                    System.out.print("V ");
+                if ((ccrValue & 0x01) != 0)
+                    System.out.print("C ");
+                System.out.println();
+            }
+        } else {
+            System.out.println("\n=== NO INSTRUCTIONS TO CALCULATE FLAGS ===");
+        }
+    }
 
     // ============================================================================
     // PHASE 1: MODE INDEXÉ - INFRASTRUCTURE DE BASE
