@@ -2,6 +2,10 @@
 *.class
 bin/
 
+bin/
+*.class
+
+
 # Fichiers temporaires
 *.tmp
 *.bak

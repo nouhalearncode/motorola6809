@@ -41,12 +41,20 @@ public class pas {
             // Update RAM based on mode
             updateRAMWithInstruction(firstWord, opcode, cleanedOperand);
 
+            // Update PC to current ROM address (pointing to next instruction)
+            int currentRomAddress = rom.getCurrentAddressInt();
+            reg.setPC(currentRomAddress);
+
         } else if (currentLine.get(0).equals("END")) {
             // Store END instruction in ROM
             storeInstructionInROM("END", "", "3F", "");
 
             // Update RAM to show END opcode
             updateRAMWithInstruction("END", "3F", "");
+
+            // Update PC to point to the address after END
+            int currentRomAddress = rom.getCurrentAddressInt();
+            reg.setPC(currentRomAddress - 1);
         }
     }
 
@@ -288,7 +296,7 @@ public class pas {
 
         // Show ROM (only executed instructions so far)
         System.out.println("\n=== CURRENT ROM (EXECUTED INSTRUCTIONS) ===");
-        rom.displayRange("0000", "000F");
+        rom.displayRange("0000", reg.getPC());
 
         // Calculate flags
         if (!currentLine.get(0).equals("END")) {

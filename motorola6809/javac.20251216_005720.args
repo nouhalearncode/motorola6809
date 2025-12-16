@@ -1,0 +1,11 @@
+-d
+bin
+src\\processeur\\flagv1.java
+src\\processeur\\lecture.java
+src\\processeur\\main.java
+src\\processeur\\mode.java
+src\\processeur\\pas.java
+src\\processeur\\ram.java
+src\\processeur\\registre.java
+src\\processeur\\ROM.java
+src\\processeur\\TestIndirect.java

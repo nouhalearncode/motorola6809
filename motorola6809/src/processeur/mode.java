@@ -67,6 +67,11 @@ public class mode {
             return direct;
         }
 
+        // PHASE 2: Détecter $XXXX (4 hex digits) comme mode Extended
+        if (secondWord.startsWith("$") && secondWord.replace("$", "").length() == 4) {
+            return etendu;
+        }
+
         return "Unknown mode";
     }
 
@@ -202,6 +207,283 @@ public class mode {
 
                     lastInstructionHex = val;
                     lastInstructionResult = Integer.parseInt(val, 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STA")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "B7";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM(address, reg.getA());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getA();
+                lastInstructionResult = Integer.parseInt(reg.getA(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
+                } else if (!type.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+
+                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
+                    }
+                } else {
+                    cleanedOperand = "";
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "A7";
+                    cycle = 5; // Typically 4-7 depending on mode, simplified to 5
+                    writeToRAM(effectiveAddr, reg.getA());
+
+                    lastInstructionHex = reg.getA();
+                    lastInstructionResult = Integer.parseInt(reg.getA(), 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STB")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "F7";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM(address, reg.getB());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getB();
+                lastInstructionResult = Integer.parseInt(reg.getB(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
+                } else if (!type.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+
+                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
+                    }
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "E7";
+                    cycle = 5;
+                    writeToRAM(effectiveAddr, reg.getB());
+
+                    lastInstructionHex = reg.getB();
+                    lastInstructionResult = Integer.parseInt(reg.getB(), 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STX")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "BF";
+                cycle = 6;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM16(address, reg.getX());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getX();
+                lastInstructionResult = Integer.parseInt(reg.getX(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                // Indexed STX logic
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
+                } else if (!type.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+
+                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
+                    }
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "AF";
+                    cycle = 6;
+                    writeToRAM16(effectiveAddr, reg.getX());
+
+                    lastInstructionHex = reg.getX();
+                    lastInstructionResult = Integer.parseInt(reg.getX(), 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STY")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "10BF";
+                cycle = 7;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM16(address, reg.getY());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getY();
+                lastInstructionResult = Integer.parseInt(reg.getY(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                // Indexed STY logic
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
+                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
+                } else if (!type.equals("UNKNOWN")) {
+                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
+                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
+                    // Append offsets...
+                    int val = Integer.parseInt(parts[2]);
+                    if (type.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", val & 0xFF);
+                    else if (type.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "10AF";
+                    cycle = 7;
+                    writeToRAM16(effectiveAddr, reg.getY());
+                    lastInstructionHex = reg.getY();
+                    lastInstructionResult = Integer.parseInt(reg.getY(), 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STU")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "DF";
+                cycle = 6;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM16(address, reg.getU());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getU();
+                lastInstructionResult = Integer.parseInt(reg.getU(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                // Indexed STU logic
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
+                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
+                } else if (!type.equals("UNKNOWN")) {
+                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
+                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
+                    int val = Integer.parseInt(parts[2]);
+                    if (type.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", val & 0xFF);
+                    else if (type.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "CF"; // STU Indexed
+                    cycle = 6;
+                    writeToRAM16(effectiveAddr, reg.getU());
+                    lastInstructionHex = reg.getU();
+                    lastInstructionResult = Integer.parseInt(reg.getU(), 16);
+                    lastInstructionFlags = new String[] { "Z", "N", "V" };
+                }
+            }
+        } else if (firstWord.equals("STS")) {
+            // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
+            if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "10DF";
+                cycle = 7;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                writeToRAM16(address, reg.getS());
+                cleanedOperand = addr;
+
+                lastInstructionHex = reg.getS();
+                lastInstructionResult = Integer.parseInt(reg.getS(), 16);
+                lastInstructionFlags = new String[] { "Z", "N", "V" };
+            } else if (mode.equals(indexe)) {
+                // Indexed STS logic
+                String parseResult = parseIndexedMode(secondWord);
+                String[] parts = parseResult.split(":");
+                String type = parts[0];
+                int effectiveAddr = 0;
+
+                if (type.equals("ACC_OFFSET")) {
+                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
+                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
+                } else if (!type.equals("UNKNOWN")) {
+                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
+                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
+                    int val = Integer.parseInt(parts[2]);
+                    if (type.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", val & 0xFF);
+                    else if (type.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                }
+
+                if (!type.equals("UNKNOWN")) {
+                    opcode = "10CF"; // STS Indexed
+                    cycle = 7;
+                    writeToRAM16(effectiveAddr, reg.getS());
+                    lastInstructionHex = reg.getS();
+                    lastInstructionResult = Integer.parseInt(reg.getS(), 16);
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
                 }
             }
@@ -3397,6 +3679,40 @@ public class mode {
         }
 
         return String.format("%02X", postByte);
+    }
+
+    /**
+     * Helper method to write to RAM
+     * Used by Store instructions (STA, STB, etc.)
+     */
+    private void writeToRAM(int address, String valueHex) {
+        String addr = String.format("%04X", address);
+        // Ensure valueHex is 2 chars (pad with 0 if needed)
+        if (valueHex.length() < 2) {
+            valueHex = "0" + valueHex;
+        } else if (valueHex.length() > 2) {
+            valueHex = valueHex.substring(valueHex.length() - 2);
+        }
+
+        ramMemory.getram().put(addr, valueHex.toUpperCase());
+        System.out.println("[RAM WRITE] Addr=" + addr + " Val=" + valueHex.toUpperCase());
+    }
+
+    /**
+     * Helper method to write 16-bit value to RAM
+     * Writes High byte at address, Low byte at address+1
+     */
+    private void writeToRAM16(int address, String valueHex16) {
+        // Ensure 4 chars
+        while (valueHex16.length() < 4) {
+            valueHex16 = "0" + valueHex16;
+        }
+
+        String highByte = valueHex16.substring(0, 2);
+        String lowByte = valueHex16.substring(2, 4);
+
+        writeToRAM(address, highByte);
+        writeToRAM(address + 1, lowByte);
     }
 
     /**
