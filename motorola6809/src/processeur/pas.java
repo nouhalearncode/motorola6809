@@ -69,11 +69,13 @@ public class pas {
 
     // NEW METHOD: Smart RAM update based on instruction mode
     private void updateRAMWithInstruction(String instruction, String opcode, String operand) {
-        // Clear RAM first
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i);
-            ram.getram().put(addr, "00");
-        }
+        // Clear RAM first - DISABLED TO PRESERVE STATE
+        /*
+         * for (int i = 0; i < 65536; i++) {
+         * String addr = String.format("%04X", i);
+         * ram.getram().put(addr, "00");
+         * }
+         */
 
         // Check mode by looking at the original instruction
         if (instruction.equals("ABX") || instruction.equals("DECA") || instruction.equals("INCB") ||
@@ -217,11 +219,13 @@ public class pas {
     }
 
     private void updateRAMWithData(String instruction, String data) {
-        // Clear RAM first
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i);
-            ram.getram().put(addr, "00");
-        }
+        // Clear RAM first - DISABLED TO PRESERVE STATE
+        /*
+         * for (int i = 0; i < 65536; i++) {
+         * String addr = String.format("%04X", i);
+         * ram.getram().put(addr, "00");
+         * }
+         */
 
         // If no data, just show cleared RAM
         if (data.isEmpty()) {

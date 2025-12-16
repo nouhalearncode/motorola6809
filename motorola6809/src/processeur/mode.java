@@ -102,28 +102,34 @@ public class mode {
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
 
+                // PHASE 6: Indirect Flag Extraction (Fixed)
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
-                    // PHASE 3: Offset accumulateur
+                if (cleanType.equals("ACC_OFFSET")) { // Use cleanType
                     String acc = parts[1]; // A, B, ou D
                     String indexReg = parts[2]; // X, Y, U, S
-                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
-                    // Générer post-byte pour ACC_OFFSET avec le registre d'index
-                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
-                } else if (!type.equals("UNKNOWN")) {
+                    // Pass isIndirect
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    // Generate post-byte (Pass isIndirect)
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
                     // PHASE 2: Autres types (offsets, auto-inc/dec)
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
+                    // Pass dirty type to calculateIndexedAddress (updated to handle it)
                     effectiveAddr = calculateIndexedAddress(type, register, value);
-                    // Générer post-byte
+                    // Pass dirty type to generatePostByte (updated to handle it)
                     cleanedOperand = generatePostByte(type, register, value);
 
                     // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
-                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                    // Use cleanType for specific checks
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
                         String offsetHex = String.format("%02X", value & 0xFF);
                         cleanedOperand += offsetHex;
-                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
                         String offsetHex = String.format("%04X", value & 0xFFFF);
                         cleanedOperand += offsetHex;
                     }
@@ -132,7 +138,7 @@ public class mode {
                     cleanedOperand = "";
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "A6"; // LDA indexed opcode
                     cycle = 4;
 
@@ -167,28 +173,34 @@ public class mode {
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
 
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
+                if (cleanType.equals("ACC_OFFSET")) {
                     // PHASE 3: Offset accumulateur
                     String acc = parts[1]; // A, B, ou D
                     String indexReg = parts[2]; // X, Y, U, S
-                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
-                    // Générer post-byte pour ACC_OFFSET avec le registre d'index
-                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
-                } else if (!type.equals("UNKNOWN")) {
+                    // Pass isIndirect
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    // Generate post-byte (Pass isIndirect)
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
                     // PHASE 2: Autres types (offsets, auto-inc/dec)
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
+                    // Pass dirty type (calculateIndexedAddress handles it)
                     effectiveAddr = calculateIndexedAddress(type, register, value);
-                    // Générer post-byte
+                    // Pass dirty type (generatePostByte handles it)
                     cleanedOperand = generatePostByte(type, register, value);
 
                     // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
-                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
                         String offsetHex = String.format("%02X", value & 0xFF);
                         cleanedOperand += offsetHex;
-                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
                         String offsetHex = String.format("%04X", value & 0xFFFF);
                         cleanedOperand += offsetHex;
                     }
@@ -197,7 +209,7 @@ public class mode {
                     cleanedOperand = "";
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "E6"; // LDB indexed opcode
                     cycle = 4;
 
@@ -228,31 +240,40 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
+                if (cleanType.equals("ACC_OFFSET")) { // Use cleanType
                     String acc = parts[1];
                     String indexReg = parts[2];
-                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
-                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
-                } else if (!type.equals("UNKNOWN")) {
+                    // Pass isIndirect
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    // Generate post-byte (Pass isIndirect)
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
+                    // Pass dirty type (calculateIndexedAddress handles it)
                     effectiveAddr = calculateIndexedAddress(type, register, value);
+                    // Pass dirty type (generatePostByte handles it)
                     cleanedOperand = generatePostByte(type, register, value);
 
-                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
                         cleanedOperand += String.format("%02X", value & 0xFF);
-                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
                         cleanedOperand += String.format("%04X", value & 0xFFFF);
                     }
                 } else {
                     cleanedOperand = "";
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "A7";
-                    cycle = 5; // Typically 4-7 depending on mode, simplified to 5
+                    cycle = 5;
                     writeToRAM(effectiveAddr, reg.getA());
 
                     lastInstructionHex = reg.getA();
@@ -278,27 +299,32 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
+                if (cleanType.equals("ACC_OFFSET")) {
                     String acc = parts[1];
                     String indexReg = parts[2];
-                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
-                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
-                } else if (!type.equals("UNKNOWN")) {
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
                     effectiveAddr = calculateIndexedAddress(type, register, value);
                     cleanedOperand = generatePostByte(type, register, value);
 
-                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
                         cleanedOperand += String.format("%02X", value & 0xFF);
-                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
                         cleanedOperand += String.format("%04X", value & 0xFFFF);
                     }
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "E7";
                     cycle = 5;
                     writeToRAM(effectiveAddr, reg.getB());
@@ -327,27 +353,32 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
+                if (cleanType.equals("ACC_OFFSET")) {
                     String acc = parts[1];
                     String indexReg = parts[2];
-                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg);
-                    cleanedOperand = generatePostByteAccOffset(acc, indexReg);
-                } else if (!type.equals("UNKNOWN")) {
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
                     String register = parts[1];
                     int value = Integer.parseInt(parts[2]);
                     effectiveAddr = calculateIndexedAddress(type, register, value);
                     cleanedOperand = generatePostByte(type, register, value);
 
-                    if (type.equals("OFFSET_8_BIT") || type.equals("PC_REL_8_BIT")) {
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
                         cleanedOperand += String.format("%02X", value & 0xFF);
-                    } else if (type.equals("OFFSET_16_BIT") || type.equals("PC_REL_16_BIT")) {
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
                         cleanedOperand += String.format("%04X", value & 0xFFFF);
                     }
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "AF";
                     cycle = 6;
                     writeToRAM16(effectiveAddr, reg.getX());
@@ -376,23 +407,31 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
-                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
-                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
-                } else if (!type.equals("UNKNOWN")) {
-                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
-                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
+                if (cleanType.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
                     // Append offsets...
-                    int val = Integer.parseInt(parts[2]);
-                    if (type.contains("8_BIT"))
-                        cleanedOperand += String.format("%02X", val & 0xFF);
-                    else if (type.contains("16_BIT"))
-                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                    if (cleanType.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    else if (cleanType.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "10AF";
                     cycle = 7;
                     writeToRAM16(effectiveAddr, reg.getY());
@@ -420,22 +459,30 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
-                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
-                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
-                } else if (!type.equals("UNKNOWN")) {
-                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
-                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
-                    int val = Integer.parseInt(parts[2]);
-                    if (type.contains("8_BIT"))
-                        cleanedOperand += String.format("%02X", val & 0xFF);
-                    else if (type.contains("16_BIT"))
-                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                if (cleanType.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+                    if (cleanType.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    else if (cleanType.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "CF"; // STU Indexed
                     cycle = 6;
                     writeToRAM16(effectiveAddr, reg.getU());
@@ -463,22 +510,30 @@ public class mode {
                 String parseResult = parseIndexedMode(secondWord);
                 String[] parts = parseResult.split(":");
                 String type = parts[0];
+
+                // PHASE 6: Indirect Flag Extraction
+                boolean isIndirect = type.contains("_INDIRECT");
+                String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
                 int effectiveAddr = 0;
 
-                if (type.equals("ACC_OFFSET")) {
-                    effectiveAddr = calculateAccumulatorIndexed(parts[1], parts[2]);
-                    cleanedOperand = generatePostByteAccOffset(parts[1], parts[2]);
-                } else if (!type.equals("UNKNOWN")) {
-                    effectiveAddr = calculateIndexedAddress(type, parts[1], Integer.parseInt(parts[2]));
-                    cleanedOperand = generatePostByte(type, parts[1], Integer.parseInt(parts[2]));
-                    int val = Integer.parseInt(parts[2]);
-                    if (type.contains("8_BIT"))
-                        cleanedOperand += String.format("%02X", val & 0xFF);
-                    else if (type.contains("16_BIT"))
-                        cleanedOperand += String.format("%04X", val & 0xFFFF);
+                if (cleanType.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else if (!cleanType.equals("UNKNOWN")) {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+                    if (cleanType.contains("8_BIT"))
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    else if (cleanType.contains("16_BIT"))
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
                 }
 
-                if (!type.equals("UNKNOWN")) {
+                if (!cleanType.equals("UNKNOWN")) {
                     opcode = "10CF"; // STS Indexed
                     cycle = 7;
                     writeToRAM16(effectiveAddr, reg.getS());
@@ -3231,6 +3286,36 @@ public class mode {
     private String parseIndexedMode(String operand) {
         operand = operand.trim();
 
+        // PHASE 6: Indirect Addressing Support ([...])
+        if (operand.startsWith("[") && operand.endsWith("]")) {
+            String inner = operand.substring(1, operand.length() - 1);
+            String innerResult = parseIndexedMode(inner);
+
+            // HARDWARE RULE ENFORCEMENT for Indirect Mode
+            if (innerResult.startsWith("OFFSET_5_BIT")) {
+                // Force 5-bit offset to 8-bit offset (Indirect doesn't support 5-bit)
+                innerResult = innerResult.replace("OFFSET_5_BIT", "OFFSET_8_BIT");
+            } else if (innerResult.startsWith("ZERO_OFFSET")) {
+                // Force Zero Offset to 8-bit Offset with 0 value
+                innerResult = innerResult.replace("ZERO_OFFSET", "OFFSET_8_BIT");
+            } else if (innerResult.startsWith("AUTO_INC")) {
+                // CHECK ILLEGAL AUTO-INCREMENT BY 1
+                String[] parts = innerResult.split(":");
+                // AUTO_INC:REG:VAL
+                if (parts[2].equals("1")) {
+                    System.out
+                            .println("Error: Indirect Auto-Increment by 1 ([,R+]) is not allowed. Use [,R++] instead.");
+                    return "UNKNOWN:INVALID:0";
+                }
+            }
+
+            // Insert _INDIRECT into the TYPE part (first part of the string)
+            // Format is TYPE:REG:VAL
+            String[] parts = innerResult.split(":");
+            parts[0] = parts[0] + "_INDIRECT"; // Use Underscore to avoid split issues
+            return String.join(":", parts);
+        }
+
         // 1. Déplacement nul (,X)
         if (operand.matches("^,[XYUS]$")) {
             String reg = operand.substring(1);
@@ -3334,10 +3419,14 @@ public class mode {
      * @return L'adresse effective calculée
      */
     private int calculateIndexedAddress(String type, String register, int value) {
+        // PHASE 6: Handle Indirect Addressing Flag
+        boolean isIndirect = type.contains("_INDIRECT");
+        String effectiveType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
         int baseAddr = 0;
 
         // 1. Récupérer la valeur actuelle du registre
-        if (!type.startsWith("PC_REL")) { // PC-Relative modes don't use X,Y,U,S as base
+        if (!effectiveType.startsWith("PC_REL")) { // PC-Relative modes don't use X,Y,U,S as base
             switch (register.toUpperCase()) {
                 case "X":
                     baseAddr = Integer.parseInt(reg.getX(), 16);
@@ -3352,10 +3441,7 @@ public class mode {
                     baseAddr = Integer.parseInt(reg.getS(), 16);
                     break;
                 default:
-                    // For ACC_OFFSET, register is the accumulator, not the index register
-                    // This method signature is a bit overloaded.
-                    // For now, if it's ACC_OFFSET, baseAddr will be set later.
-                    if (!type.equals("ACC_OFFSET")) {
+                    if (!effectiveType.equals("ACC_OFFSET")) {
                         return 0;
                     }
             }
@@ -3365,16 +3451,12 @@ public class mode {
         int newRegValue = baseAddr;
 
         // 2. Calculer selon le type
-        switch (type) {
+        switch (effectiveType) {
             case "ZERO_OFFSET":
                 effectiveAddr = baseAddr;
                 break;
 
             case "OFFSET_5_BIT":
-                // Simulation du post-byte pour validation (optionnel mais pédagogique)
-                // Ici on utilise directement la valeur parsée, mais on pourrait passer par
-                // decode5BitOffset
-                // pour être puriste. Pour l'instant, on fait confiance au parsing.
                 effectiveAddr = baseAddr + value;
                 break;
 
@@ -3389,8 +3471,6 @@ public class mode {
                 break;
 
             case "OFFSET_8_BIT":
-                // CRITICAL: Cast to byte pour forcer sign extension
-                // $FF (255) devient -1, $80 (128) devient -128
                 effectiveAddr = baseAddr + (byte) value;
                 System.out.println("[INDEXED PHASE 4] Type=OFFSET_8_BIT Reg=" + register +
                         " Offset=$" + String.format("%02X", value) +
@@ -3399,8 +3479,6 @@ public class mode {
                 break;
 
             case "OFFSET_16_BIT":
-                // CRITICAL: Cast to short pour forcer sign extension
-                // $FFFF (65535) devient -1, $8000 (32768) devient -32768
                 effectiveAddr = baseAddr + (short) value;
                 System.out.println("[INDEXED PHASE 4] Type=OFFSET_16_BIT Reg=" + register +
                         " Offset=$" + String.format("%04X", value) +
@@ -3410,10 +3488,8 @@ public class mode {
 
             case "PC_REL_8_BIT":
                 int currentPC8 = Integer.parseInt(reg.getPC(), 16);
-                // Instruction Size = 3 (Opcode + Postbyte + Offset8)
-                // Effective Addr = (PC + 3) + Signed Offset8
                 effectiveAddr = (currentPC8 + 3) + (byte) value;
-                effectiveAddr = effectiveAddr & 0xFFFF; // Masque 16 bits
+                effectiveAddr = effectiveAddr & 0xFFFF;
                 System.out.println("[INDEXED PHASE 5] Type=PC_REL_8_BIT PC=" + String.format("%04X", currentPC8) +
                         " Offset=$" + String.format("%02X", value) +
                         " (signé=" + (byte) value + ") => EffAddr=" +
@@ -3422,10 +3498,8 @@ public class mode {
 
             case "PC_REL_16_BIT":
                 int currentPC16 = Integer.parseInt(reg.getPC(), 16);
-                // Instruction Size = 4 (Opcode + Postbyte + Offset16)
-                // Effective Addr = (PC + 4) + Signed Offset16
                 effectiveAddr = (currentPC16 + 4) + (short) value;
-                effectiveAddr = effectiveAddr & 0xFFFF; // Masque 16 bits
+                effectiveAddr = effectiveAddr & 0xFFFF;
                 System.out.println("[INDEXED PHASE 5] Type=PC_REL_16_BIT PC=" + String.format("%04X", currentPC16) +
                         " Offset=$" + String.format("%04X", value) +
                         " (signé=" + (short) value + ") => EffAddr=" +
@@ -3437,8 +3511,8 @@ public class mode {
         }
 
         // 3. Mettre à jour le registre si nécessaire (Effet de bord)
-        if (type.equals("AUTO_INC") || type.equals("AUTO_DEC")) {
-            String newHex = String.format("%04X", newRegValue & 0xFFFF); // Masque 16 bits
+        if (effectiveType.equals("AUTO_INC") || effectiveType.equals("AUTO_DEC")) {
+            String newHex = String.format("%04X", newRegValue & 0xFFFF);
             switch (register.toUpperCase()) {
                 case "X":
                     reg.setX(newHex);
@@ -3456,9 +3530,28 @@ public class mode {
             System.out.println("   -> Registre " + register + " mis à jour: " + newHex);
         }
 
+        // PHASE 6: Indirect Addressing Dereferencing
+        if (isIndirect) {
+            int original = effectiveAddr & 0xFFFF;
+            // Read Pointer High Byte
+            String ptrHighHex = ramMemory.getram().get(String.format("%04X", original));
+            int ptrHigh = Integer.parseInt(ptrHighHex != null ? ptrHighHex : "00", 16);
+
+            // Read Pointer Low Byte
+            String ptrLowHex = ramMemory.getram().get(String.format("%04X", (original + 1) & 0xFFFF));
+            int ptrLow = Integer.parseInt(ptrLowHex != null ? ptrLowHex : "00", 16);
+
+            // Combine
+            effectiveAddr = ((ptrHigh << 8) | ptrLow) & 0xFFFF;
+
+            System.out.println("   [INDIRECT] [" + String.format("%04X", original) + "] -> "
+                    + String.format("%04X", effectiveAddr));
+        }
+
         // Debug
-        if (!type.startsWith("PC_REL") && !type.equals("OFFSET_8_BIT") && !type.equals("OFFSET_16_BIT")) {
-            System.out.println("[INDEXED PHASE 2] Type=" + type + " Reg=" + register +
+        if (!effectiveType.startsWith("PC_REL") && !effectiveType.equals("OFFSET_8_BIT")
+                && !effectiveType.equals("OFFSET_16_BIT")) {
+            System.out.println("[INDEXED PHASE 2/6] Type=" + type + " Reg=" + register +
                     " Val=" + value + " => EffAddr=" + String.format("%04X", effectiveAddr));
         }
 
@@ -3472,7 +3565,7 @@ public class mode {
      * @param indexRegister Le registre d'index ("X", "Y", "U", "S")
      * @return L'adresse effective calculée
      */
-    private int calculateAccumulatorIndexed(String accumulator, String indexRegister) {
+    private int calculateAccumulatorIndexed(String accumulator, String indexRegister, boolean isIndirect) {
         // 1. Récupérer la valeur du registre d'index
         int baseAddr = 0;
         switch (indexRegister.toUpperCase()) {
@@ -3518,13 +3611,32 @@ public class mode {
 
         // 3. Calculer l'adresse effective
         int effectiveAddr = baseAddr + accValue;
+        effectiveAddr = effectiveAddr & 0xFFFF; // Masque 16-bits initial
+
+        // PHASE 6: Indirect Addressing Dereferencing
+        if (isIndirect) {
+            int original = effectiveAddr;
+            // Read Pointer High Byte
+            String ptrHighHex = ramMemory.getram().get(String.format("%04X", original));
+            int ptrHigh = Integer.parseInt(ptrHighHex != null ? ptrHighHex : "00", 16);
+
+            // Read Pointer Low Byte
+            String ptrLowHex = ramMemory.getram().get(String.format("%04X", (original + 1) & 0xFFFF));
+            int ptrLow = Integer.parseInt(ptrLowHex != null ? ptrLowHex : "00", 16);
+
+            // Combine
+            effectiveAddr = ((ptrHigh << 8) | ptrLow) & 0xFFFF;
+
+            System.out.println("   [INDIRECT ACC] [" + String.format("%04X", original) + "] -> "
+                    + String.format("%04X", effectiveAddr));
+        }
 
         // Debug
         System.out.println("[INDEXED PHASE 3] Type=ACC_OFFSET Acc=" + accumulator +
                 " Val=" + accValue + " Base=" + String.format("%04X", baseAddr) +
-                " => EffAddr=" + String.format("%04X", effectiveAddr & 0xFFFF));
+                " => EffAddr=" + String.format("%04X", effectiveAddr));
 
-        return effectiveAddr & 0xFFFF; // Masque 16-bits
+        return effectiveAddr;
     }
 
     /**
@@ -3536,6 +3648,24 @@ public class mode {
      * @return Post-byte en format hexadécimal (String de 2 caractères)
      */
     private String generatePostByte(String type, String register, int value) {
+        // PHASE 6: Indirect Addressing Support (Set Bit 4)
+        if (type.endsWith("_INDIRECT")) {
+            String baseType = type.replace("_INDIRECT", "");
+            // Recursive call to get standard post-byte
+            String baseHex = generatePostByte(baseType, register, value);
+            int pb = Integer.parseInt(baseHex, 16);
+
+            // Set Bit 4 for Indirection (Standard & PCR)
+            // 8C (PCR 8) -> 9C
+            // 8D (PCR 16) -> 9D
+            // 9F (Indirect 16-bit) -> 9F (unchanged? No, Offset 16 is 8F/9F/AF/BF ?)
+            // Offset 16 bit is 1RR01001 (89/A9/C9/E9). Indirect is 1RR11001 (99/B9/D9/F9).
+            // 89 | 10 = 99. Correct.
+            pb = pb | 0x10;
+
+            return String.format("%02X", pb);
+        }
+
         int postByte = 0;
 
         // Bits 6-5: Registre (RR)
@@ -3643,7 +3773,7 @@ public class mode {
      * @param indexRegister Le registre d'index (X, Y, U, S)
      * @return Post-byte en format hexadécimal
      */
-    private String generatePostByteAccOffset(String accumulator, String indexRegister) {
+    private String generatePostByteAccOffset(String accumulator, String indexRegister, boolean isIndirect) {
         int postByte = 0;
 
         // Bits 6-5: Registre d'index (RR)
@@ -3676,6 +3806,11 @@ public class mode {
             case "D":
                 postByte = 0b10001011 | (regBits << 5);
                 break;
+        }
+
+        // PHASE 6: Indirect Addressing
+        if (isIndirect) {
+            postByte = postByte | 0x10;
         }
 
         return String.format("%02X", postByte);
