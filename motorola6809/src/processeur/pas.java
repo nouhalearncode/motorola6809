@@ -20,6 +20,18 @@ public class pas {
         resetMemory();
     }
 
+    // In pas.java, add:
+public void updateDisplayRAM(String value, int address) {
+    if (value.length() == 4) {
+        // 16-bit value
+        ram.getram().put(String.format("%04X", address), value.substring(0, 2));
+        ram.getram().put(String.format("%04X", address + 1), value.substring(2, 4));
+    } else if (value.length() == 2) {
+        // 8-bit value
+        ram.getram().put(String.format("%04X", address), value);
+    }
+}
+
     private void executeSingleStep(int stepIndex) {
         if (stepIndex >= assemblyLines.size())
             return;
@@ -69,36 +81,33 @@ public class pas {
 
     // NEW METHOD: Smart RAM update based on instruction mode
     private void updateRAMWithInstruction(String instruction, String opcode, String operand) {
-        // Clear RAM first - DISABLED TO PRESERVE STATE
-        /*
-         * for (int i = 0; i < 65536; i++) {
-         * String addr = String.format("%04X", i);
-         * ram.getram().put(addr, "00");
-         * }
-         */
-
-        // Check mode by looking at the original instruction
-        if (instruction.equals("ABX") || instruction.equals("DECA") || instruction.equals("INCB") ||
-                instruction.equals("CLRA") || instruction.equals("COMB") ||
-                instruction.equals("DAA") || instruction.equals("MUL") ||
-                instruction.equals("NEGA") || instruction.equals("NEGB") || instruction.equals("NOP")) {
-            // INHERENT MODE: Store opcode at 0000
-            if (!opcode.equals("00")) {
-                ram.getram().put("0000", opcode);
-            }
-        } else if (instruction.startsWith("LD") || instruction.startsWith("ADD") ||
-                instruction.startsWith("SUB") || instruction.startsWith("AND") ||
-                instruction.startsWith("OR") || instruction.startsWith("EOR") ||
-                instruction.startsWith("CMP")) {
-            // IMMEDIATE MODE: Store operand (data value) at 0000
-            if (!operand.isEmpty()) {
-                ram.getram().put("0000", operand);
-            }
-        } else if (instruction.equals("END")) {
-            // END: Store opcode at 0000
-            ram.getram().put("0000", opcode);
-        }
+    // DO NOT clear RAM - preserve existing data
+    
+    // This method should ONLY update RAM for visualization purposes
+    // It doesn't affect actual execution
+    
+    if (instruction.equals("END")) {
+        // Show END opcode at 0000
+        ram.getram().put("0000", opcode); // "3F"
+        return;
     }
+    
+    // For immediate mode (#$XX), show the data
+    if (operand.length() == 2) {
+        // This is a single byte value (like #$22)
+        ram.getram().put("0000", operand);
+    } 
+    else if (operand.length() == 4) {
+        // This is a 16-bit value (like #$3344)
+        // Split into two bytes
+        String highByte = operand.substring(0, 2);
+        String lowByte = operand.substring(2, 4);
+        ram.getram().put("0000", highByte);
+        ram.getram().put("0001", lowByte);
+    }
+    // For extended mode addresses, DO NOT store them in RAM display
+    // They are addresses, not data values
+}
 
     private void resetMemory() {
         // Reset ROM completely - fill with zeros
@@ -262,21 +271,40 @@ public class pas {
     }
 
     private void storeDataChunk(String data, int address) {
-        if (data.isEmpty())
-            return;
-
-        // Ensure we have at least 2 characters
-        String chunk = data;
-        if (chunk.length() < 2) {
-            chunk = "0" + chunk; // Pad with leading zero
-        } else if (chunk.length() > 2) {
-            // For values longer than 2 chars, take first 2 chars
-            chunk = chunk.substring(0, 2);
-        }
-
+    if (data.isEmpty())
+        return;
+    
+    // If data is 4 characters (2 bytes), split it
+    if (data.length() == 4) {
+        // Store high byte at current address
+        String highByte = data.substring(0, 2);
+        String addrHigh = String.format("%04X", address);
+        ram.getram().put(addrHigh, highByte);
+        
+        // Store low byte at next address
+        String lowByte = data.substring(2, 4);
+        String addrLow = String.format("%04X", address + 1);
+        ram.getram().put(addrLow, lowByte);
+    } 
+    // If data is 2 characters (1 byte)
+    else if (data.length() == 2) {
         String addr = String.format("%04X", address);
-        ram.getram().put(addr, chunk);
+        ram.getram().put(addr, data);
     }
+    // // If data is other length, pad or truncate
+    // else if (data.length() > 4) {
+    //     // Take first 4 characters and split
+    //     String chunk = data.substring(0, 4);
+    //     storeDataChunk(chunk, address);
+    // } 
+    // else if (data.length() < 2) {
+    //     // Pad with leading zero
+    //     String padded = String.format("%2s", data).replace(' ', '0');
+    //     String addr = String.format("%04X", address);
+    //     ram.getram().put(addr, padded);
+    // }
+    // REMOVE THE ENTIRE BOTTOM SECTION BELOW THIS LINE!
+}
 
     private void showCurrentState(int stepIndex) {
         ArrayList<String> currentLine = assemblyLines.get(stepIndex);
