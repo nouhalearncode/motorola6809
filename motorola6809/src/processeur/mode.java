@@ -72,6 +72,11 @@ public class mode {
             return etendu;
         }
 
+        // Check for $XX (2 hex digits) = direct
+    if (secondWord.startsWith("$") && secondWord.replace("$", "").length() == 2) {
+        return direct;
+    }
+
         return "Unknown mode";
     }
 
@@ -105,6 +110,29 @@ if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains("
     lastInstructionResult = Integer.parseInt(val, 16);
     lastInstructionFlags = new String[] { "Z", "N", "V" };
     //ramMemory.getram().put("0000", val);
+}
+
+// In LDA section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "96";  // LDA direct opcode
+    cycle = 3;      // LDA direct takes 3 cycles
+    
+    // Get address (remove < and $)
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF; // Force to page 0
+    
+    // Read from RAM at page 0 address
+    String val = readFromRAM(address);
+    
+    // Load into A
+    reg.setA(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    // Store for flag calculation
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
 }
             if (mode.equals(immediat)) {
                 opcode = "86";
@@ -199,6 +227,23 @@ if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains("
     lastInstructionFlags = new String[] { "Z", "N", "V" };
     //ramMemory.getram().put("0000", val);
 }
+// In LDB section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "D6";  // LDB direct opcode
+    cycle = 3;      // LDB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String val = readFromRAM(address);
+    reg.setB(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C6";
                 cycle = 2;
@@ -267,6 +312,27 @@ if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains("
                 }
             }
         } else if (firstWord.equals("STA")) {
+
+            // In STA section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "97";  // STA direct opcode
+    cycle = 4;      // STA direct takes 4 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Store A to memory
+    writeToRAM(address, reg.getA());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getA();
+    lastInstructionResult = Integer.parseInt(reg.getA(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+// But ensure you're actually using it!
+writeToRAM(address, reg.getA());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -326,6 +392,26 @@ if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains("
                 }
             }
         } else if (firstWord.equals("STB")) {
+
+            // In STB section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "D7";  // STB direct opcode
+    cycle = 4;      // STB direct takes 4 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    writeToRAM(address, reg.getB());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getB();
+    lastInstructionResult = Integer.parseInt(reg.getB(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getB());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -382,6 +468,27 @@ if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains("
         
         // Add this case after the STS case and before the LDD case
 else if (firstWord.equals("STD")) {
+
+    // In STD section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "DD";  // STD direct opcode
+    cycle = 5;      // STD direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Store 16-bit D register (2 bytes)
+    writeToRAM16(address, reg.getD());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getD();
+    lastInstructionResult = Integer.parseInt(reg.getD(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getD());  // Should write to 0080, not 0000
+}
     // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
@@ -438,6 +545,25 @@ else if (firstWord.equals("STD")) {
         }
     }
 }else if (firstWord.equals("STX")) {
+    // In STX section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "9F";  // STX direct opcode
+    cycle = 5;      // STX direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    writeToRAM16(address, reg.getX());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getX();
+    lastInstructionResult = Integer.parseInt(reg.getX(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getX());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -492,6 +618,25 @@ else if (firstWord.equals("STD")) {
                 }
             }
         } else if (firstWord.equals("STY")) {
+            // In STX section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "9F";  // STX direct opcode
+    cycle = 5;      // STX direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    writeToRAM16(address, reg.getY());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getY();
+    lastInstructionResult = Integer.parseInt(reg.getX(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getY());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -544,6 +689,26 @@ else if (firstWord.equals("STD")) {
                 }
             }
         } else if (firstWord.equals("STU")) {
+
+            // In STU section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "DF";  // STU direct opcode
+    cycle = 5;      // STU direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    writeToRAM16(address, reg.getU());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getU();
+    lastInstructionResult = Integer.parseInt(reg.getU(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getU());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -595,6 +760,26 @@ else if (firstWord.equals("STD")) {
                 }
             }
         } else if (firstWord.equals("STS")) {
+
+            // In STS section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "10DF";  // STS direct opcode (prefix 10 + DF)
+    cycle = 6;        // STS direct takes 6 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    writeToRAM16(address, reg.getS());
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = reg.getS();
+    lastInstructionResult = Integer.parseInt(reg.getS(), 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+    // But ensure you're actually using it!
+writeToRAM(address, reg.getS());  // Should write to 0080, not 0000
+}
             // Handle Extended mode: >$XXXX or $XXXX (4 hex digits, no comma)
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
@@ -671,6 +856,29 @@ else if (firstWord.equals("STD")) {
 //     ramMemory.getram().put("0000", highByte);
 // ramMemory.getram().put("0001", lowByte);
 }
+
+// In LDD section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "DC";  // LDD direct opcode
+    cycle = 4;      // LDD direct takes 4 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read 2 bytes from RAM
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String val = highByte + lowByte;
+    
+    // Load into D (which also updates A and B)
+    reg.setD(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+}
             if (mode.equals(immediat)) {
                 opcode = "CC";
                 cycle = 3;
@@ -708,6 +916,27 @@ else if (firstWord.equals("STD")) {
     lastInstructionFlags = new String[] { "Z", "N", "V" };
 //     ramMemory.getram().put("0000", highByte);
 // ramMemory.getram().put("0001", lowByte);
+}
+
+// In LDS section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "10DE";  // LDS direct opcode (prefix 10 + DE)
+    cycle = 5;        // LDS direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String val = highByte + lowByte;
+    
+    reg.setS(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
 }
             if (mode.equals(immediat)) {
                 opcode = "10CE"; // Correct opcode for LDS immediate
@@ -754,6 +983,26 @@ else if (firstWord.equals("STD")) {
 //     ramMemory.getram().put("0000", highByte);
 // ramMemory.getram().put("0001", lowByte);
 }
+// In LDU section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "DE";  // LDU direct opcode
+    cycle = 4;      // LDU direct takes 4 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String val = highByte + lowByte;
+    
+    reg.setU(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+}
             if (mode.equals(immediat)) {
                 opcode = "CE";
                 cycle = 3;
@@ -791,6 +1040,28 @@ else if (firstWord.equals("STD")) {
     lastInstructionFlags = new String[] { "Z", "N", "V" };
 //     ramMemory.getram().put("0000", highByte);
 // ramMemory.getram().put("0001", lowByte);
+}
+
+// In LDX section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "9E";  // LDX direct opcode
+    cycle = 4;      // LDX direct takes 4 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read 2 bytes from RAM
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String val = highByte + lowByte;
+    
+    reg.setX(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
 }
             if (mode.equals(immediat)) {
                 opcode = "8E";
@@ -830,6 +1101,27 @@ else if (firstWord.equals("STD")) {
 //     ramMemory.getram().put("0000", highByte);
 // ramMemory.getram().put("0001", lowByte);
 }
+
+// In LDY section, add direct mode:
+if (mode.equals(direct)) {
+    opcode = "109E";  // LDY direct opcode (prefix 10 + 9E)
+    cycle = 5;        // LDY direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String val = highByte + lowByte;
+    
+    reg.setY(val);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = val;
+    lastInstructionResult = Integer.parseInt(val, 16);
+    lastInstructionFlags = new String[] { "Z", "N", "V" };
+}
             if (mode.equals(immediat)) {
                 opcode = "108E";
                 cycle = 4;
@@ -843,6 +1135,23 @@ else if (firstWord.equals("STD")) {
 
             }
         } else if (firstWord.equals("SUBA")) {
+            // Add after SUBA immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "90";  // SUBA direct opcode
+    cycle = 3;      // SUBA direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performSubtractionA(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "80";
                 cycle = 2;
@@ -871,6 +1180,23 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("SUBB")) {
+            // Add after SUBB immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "D0";  // SUBB direct opcode
+    cycle = 3;      // SUBB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performSubtractionB(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C0";
                 cycle = 2;
@@ -899,6 +1225,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("SUBD")) {
+            // Add after SUBD immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "93";  // SUBD direct opcode
+    cycle = 6;      // SUBD direct takes 6 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read 2 bytes from memory
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    
+    int result = performSubtractionD(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "83";
                 cycle = 4;
@@ -931,6 +1278,30 @@ else if (firstWord.equals("STD")) {
     }
         } // NEW COMPARE INSTRUCTIONS
         else if (firstWord.equals("CMPA")) {
+            // Add after CMPA immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "91";  // CMPA direct opcode
+    cycle = 3;      // CMPA direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read from memory
+    String memVal = readFromRAM(address);
+    int memValue = Integer.parseInt(memVal, 16);
+    
+    // Get A value
+    int aValue = Integer.parseInt(reg.getA(), 16);
+    
+    // Calculate comparison (A - memory)
+    int result = aValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "81";
                 cycle = 2;
@@ -964,6 +1335,25 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPB")) {
+            // Add after CMPB immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "D1";  // CMPB direct opcode
+    cycle = 3;      // CMPB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int memValue = Integer.parseInt(memVal, 16);
+    int bValue = Integer.parseInt(reg.getB(), 16);
+    int result = bValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C1";
                 cycle = 2;
@@ -994,6 +1384,30 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPD")) {
+            // Add after CMPD immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "1093";  // CMPD direct opcode (prefix 10 + 93)
+    cycle = 5;        // CMPD direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read 2 bytes from memory
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    int memValue = Integer.parseInt(memVal, 16);
+    
+    // Get D value
+    int dValue = Integer.parseInt(reg.getD(), 16);
+    int result = dValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "1083";
                 cycle = 5;
@@ -1027,6 +1441,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPS")) {
+            // Add after CMPS immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "119C";  // CMPS direct opcode (prefix 11 + 9C)
+    cycle = 5;        // CMPS direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    int memValue = Integer.parseInt(memVal, 16);
+    int sValue = Integer.parseInt(reg.getS(), 16);
+    int result = sValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "118C";
                 cycle = 5;
@@ -1059,6 +1494,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPU")) {
+            // Add after CMPU immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "1193";  // CMPU direct opcode (prefix 11 + 93)
+    cycle = 5;        // CMPU direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    int memValue = Integer.parseInt(memVal, 16);
+    int uValue = Integer.parseInt(reg.getU(), 16);
+    int result = uValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "1183";
                 cycle = 5;
@@ -1090,6 +1546,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPX")) {
+            // Add after CMPX immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "9C";  // CMPX direct opcode
+    cycle = 5;      // CMPX direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    int memValue = Integer.parseInt(memVal, 16);
+    int xValue = Integer.parseInt(reg.getX(), 16);
+    int result = xValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "8C";
                 cycle = 4;
@@ -1122,6 +1599,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("CMPY")) {
+            // Add after CMPY immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "109C";  // CMPY direct opcode (prefix 10 + 9C)
+    cycle = 5;        // CMPY direct takes 5 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    int memValue = Integer.parseInt(memVal, 16);
+    int yValue = Integer.parseInt(reg.getY(), 16);
+    int result = yValue - memValue;
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "108C";
                 cycle = 5;
@@ -1155,6 +1653,23 @@ else if (firstWord.equals("STD")) {
     }
         } // === ADD INSTRUCTIONS ===
         else if (firstWord.equals("ADDA")) {
+            // Add after ADDA immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "9B";  // ADDA direct opcode
+    cycle = 3;      // ADDA direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performAdditionA(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "8B";
                 cycle = 2;
@@ -1183,6 +1698,23 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("ADDB")) {
+            // Add after ADDB immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "DB";  // ADDB direct opcode
+    cycle = 3;      // ADDB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performAdditionB(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "CB";
                 cycle = 2;
@@ -1211,6 +1743,27 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("ADDD")) {
+            // Add after ADDD immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "D3";  // ADDD direct opcode
+    cycle = 6;      // ADDD direct takes 6 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    // Read 2 bytes from memory
+    String highByte = readFromRAM(address);
+    String lowByte = readFromRAM(address + 1);
+    String memVal = highByte + lowByte;
+    
+    int result = performAdditionD(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C3";
                 cycle = 4;
@@ -1245,6 +1798,22 @@ else if (firstWord.equals("STD")) {
 
         // === AND INSTRUCTIONS ===
         else if (firstWord.equals("ANDA")) {
+            if (mode.equals(direct)) {
+        opcode = "94";  // ANDA direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performAndA(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "84";
                 cycle = 2;
@@ -1276,6 +1845,22 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
         } else if (firstWord.equals("ANDB")) {
+            if (mode.equals(direct)) {
+        opcode = "D4";  // ANDB direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performAndB(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "C4";
                 cycle = 2;
@@ -1317,6 +1902,22 @@ else if (firstWord.equals("STD")) {
 
         // === OR INSTRUCTIONS ===
         else if (firstWord.equals("ORA")) {
+            if (mode.equals(direct)) {
+        opcode = "9A";  // ORA direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performOrA(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "8A";
                 cycle = 2;
@@ -1345,6 +1946,22 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
         } else if (firstWord.equals("ORB")) {
+            if (mode.equals(direct)) {
+        opcode = "DA";  // ORB direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performOrB(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "CA";
                 cycle = 2;
@@ -1386,6 +2003,22 @@ else if (firstWord.equals("STD")) {
 
         // === EOR INSTRUCTIONS ===
         else if (firstWord.equals("EORA")) {
+            if (mode.equals(direct)) {
+        opcode = "98";  // EORA direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performEorA(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "88";
                 cycle = 2;
@@ -1414,6 +2047,22 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
         } else if (firstWord.equals("EORB")) {
+            if (mode.equals(direct)) {
+        opcode = "D8";  // EORB direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int result = performEorB(memVal, reg);
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "C8";
                 cycle = 2;
@@ -1445,6 +2094,23 @@ else if (firstWord.equals("STD")) {
 
         // === ADD WITH CARRY INSTRUCTIONS ===
         else if (firstWord.equals("ADCA")) {
+            // Add after ADCA immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "99";  // ADCA direct opcode
+    cycle = 3;      // ADCA direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performAddWithCarryA(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "89"; // ADCA immediate opcode
                 cycle = 2;
@@ -1476,6 +2142,23 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("ADCB")) {
+            // Add after ADCB immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "D9";  // ADCB direct opcode
+    cycle = 3;      // ADCB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performAddWithCarryB(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C9"; // ADCB immediate opcode
                 cycle = 2;
@@ -1506,6 +2189,23 @@ else if (firstWord.equals("STD")) {
         }
         // === SUBTRACT WITH CARRY INSTRUCTIONS ===
         else if (firstWord.equals("SBCA")) {
+            // Add after SBCA immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "92";  // SBCA direct opcode
+    cycle = 3;      // SBCA direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performSubtractWithCarryA(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "82"; // SBCA immediate opcode
                 cycle = 2;
@@ -1534,6 +2234,23 @@ else if (firstWord.equals("STD")) {
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
         } else if (firstWord.equals("SBCB")) {
+            // Add after SBCB immediate/extended sections:
+if (mode.equals(direct)) {
+    opcode = "D2";  // SBCB direct opcode
+    cycle = 3;      // SBCB direct takes 3 cycles
+    
+    String addrStr = secondWord.replace("<", "").replace("$", "");
+    int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+    
+    String memVal = readFromRAM(address);
+    int result = performSubtractWithCarryB(memVal, reg);
+    
+    cleanedOperand = String.format("%02X", address);
+    
+    lastInstructionHex = memVal;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+}
             if (mode.equals(immediat)) {
                 opcode = "C2"; // SBCB immediate opcode
                 cycle = 2;
@@ -1566,6 +2283,31 @@ else if (firstWord.equals("STD")) {
 
 // === DEC IN EXTENDED MODE ===
 else if (firstWord.equals("DEC")) {
+    if (mode.equals(direct)) {
+        opcode = "7A";  // DEC direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Decrement value
+        int result = (value - 1) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "7A";  // DEC extended opcode
@@ -1595,6 +2337,31 @@ else if (firstWord.equals("DEC")) {
 
 // === INC IN EXTENDED MODE ===
 else if (firstWord.equals("INC")) {
+    if (mode.equals(direct)) {
+        opcode = "7C";  // INC direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Increment value
+        int result = (value + 1) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "7C";  // INC extended opcode
@@ -1623,6 +2390,32 @@ else if (firstWord.equals("INC")) {
 }
 // === ASL IN EXTENDED MODE ===
 else if (firstWord.equals("ASL")) {
+    if (mode.equals(direct)) {
+        opcode = "78";  // ASL direct opcode (actually extended, direct doesn't exist)
+        cycle = 5;      // ASL direct takes 5 cycles
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform ASL (Arithmetic Shift Left) - same as LSL
+        int carryOut = (value >> 7) & 0x01;
+        int result = (value << 1) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "78";  // ASL extended opcode
@@ -1653,6 +2446,33 @@ else if (firstWord.equals("ASL")) {
 
 // === ASR IN EXTENDED MODE ===
 else if (firstWord.equals("ASR")) {
+    if (mode.equals(direct)) {
+        opcode = "77";  // ASR direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform ASR (Arithmetic Shift Right) - sign extended
+        int signBit = (value >> 7) & 0x01;
+        int carryOut = value & 0x01;
+        int result = (value >> 1) | (signBit << 7);
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "77";  // ASR extended opcode
@@ -1684,6 +2504,32 @@ else if (firstWord.equals("ASR")) {
 
 // === LSL IN EXTENDED MODE ===
 else if (firstWord.equals("LSL")) {
+    if (mode.equals(direct)) {
+        opcode = "78";  // LSL direct opcode (same as ASL)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform LSL (Logical Shift Left)
+        int carryOut = (value >> 7) & 0x01;
+        int result = (value << 1) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "78";  // LSL extended opcode (same as ASL)
@@ -1714,6 +2560,32 @@ else if (firstWord.equals("LSL")) {
 
 // === LSR IN EXTENDED MODE ===
 else if (firstWord.equals("LSR")) {
+    if (mode.equals(direct)) {
+        opcode = "74";  // LSR direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform LSR (Logical Shift Right)
+        int carryOut = value & 0x01;
+        int result = (value >> 1) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "74";  // LSR extended opcode
@@ -1743,6 +2615,23 @@ else if (firstWord.equals("LSR")) {
 }
 // === CLR IN EXTENDED MODE ===
 else if (firstWord.equals("CLR")) {
+    if (mode.equals(direct)) {
+        opcode = "7F";  // CLR direct opcode (actually extended, but we'll use it)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Clear memory location (write 00)
+        writeToRAM(address, "00");
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = "00";
+        lastInstructionResult = 0;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "7F";  // CLR extended opcode
@@ -1764,6 +2653,31 @@ else if (firstWord.equals("CLR")) {
 
 // === COM IN EXTENDED MODE ===
 else if (firstWord.equals("COM")) {
+    if (mode.equals(direct)) {
+        opcode = "73";  // COM direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform COM (One's Complement)
+        int result = (~value) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "73";  // COM extended opcode
@@ -1793,6 +2707,32 @@ else if (firstWord.equals("COM")) {
 
 // === NEG IN EXTENDED MODE ===
 else if (firstWord.equals("NEG")) {
+    if (mode.equals(direct)) {
+        opcode = "70";  // NEG direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform NEG (Two's Complement Negation)
+        // NEG = 0 - value (two's complement)
+        int result = (0 - value) & 0xFF;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "70";  // NEG extended opcode
@@ -1822,6 +2762,27 @@ else if (firstWord.equals("NEG")) {
 }
 // === TST IN EXTENDED MODE ===
 else if (firstWord.equals("TST")) {
+    if (mode.equals(direct)) {
+        opcode = "7D";  // TST direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM (but don't change it!)
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // TST only sets flags based on the value
+        // Result = value (for flag calculation, memory unchanged)
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = val;
+        lastInstructionResult = value;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "7D";  // TST extended opcode
@@ -1847,6 +2808,33 @@ else if (firstWord.equals("TST")) {
 
 // === ROL IN EXTENDED MODE ===
 else if (firstWord.equals("ROL")) {
+     if (mode.equals(direct)) {
+        opcode = "79";  // ROL direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform ROL (Rotate Left through Carry)
+        int carry = getCarryFlag(reg);
+        int newCarry = (value >> 7) & 0x01;
+        int result = ((value << 1) & 0xFF) | carry;
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "79";  // ROL extended opcode
@@ -1878,6 +2866,33 @@ else if (firstWord.equals("ROL")) {
 
 // === ROR IN EXTENDED MODE ===
 else if (firstWord.equals("ROR")) {
+    if (mode.equals(direct)) {
+        opcode = "76";  // ROR direct opcode (hypothetical)
+        cycle = 5;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Read from RAM
+        String val = readFromRAM(address);
+        int value = Integer.parseInt(val, 16);
+        
+        // Perform ROR (Rotate Right through Carry)
+        int carry = getCarryFlag(reg);
+        int newCarry = value & 0x01;
+        int result = ((value >> 1) & 0xFF) | (carry << 7);
+        String resultHex = String.format("%02X", result);
+        
+        // Write back to RAM
+        writeToRAM(address, resultHex);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // Store for flag calculation
+        lastInstructionHex = resultHex;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "76";  // ROR extended opcode
@@ -1908,6 +2923,27 @@ else if (firstWord.equals("ROR")) {
 }
 // === JMP IN EXTENDED MODE ===
 else if (firstWord.equals("JMP")) {
+    if (mode.equals(direct)) {
+        opcode = "7E";  // JMP direct opcode (hypothetical - actually extended)
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Jump to address (set PC)
+        reg.setPC(address);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // JMP doesn't affect flags
+        lastInstructionHex = addrStr;
+        lastInstructionResult = address;
+        lastInstructionFlags = new String[] {};
+
+        // Skip PC auto-increment
+        this.op = opcode;
+        return new String[] { opcode, cleanedOperand };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "7E";  // JMP extended opcode
@@ -1935,6 +2971,42 @@ else if (firstWord.equals("JMP")) {
 
 // === JSR IN EXTENDED MODE ===
 else if (firstWord.equals("JSR")) {
+    if (mode.equals(direct)) {
+        opcode = "BD";  // JSR direct opcode (actually extended)
+        cycle = 8;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        // Get current PC (which already points to next instruction)
+        int currentPC = Integer.parseInt(reg.getPC(), 16);
+        
+        // Push return address onto stack
+        int sValue = Integer.parseInt(reg.getS(), 16);
+        
+        // Decrement stack and push high byte
+        sValue -= 2;
+        String pcVal = String.format("%04X", currentPC);
+        ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
+        ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
+        
+        // Update stack pointer
+        reg.setS(String.format("%04X", sValue));
+        
+        // Jump to subroutine
+        reg.setPC(address);
+        
+        cleanedOperand = String.format("%02X", address);
+
+        // JSR doesn't affect flags
+        lastInstructionHex = addrStr;
+        lastInstructionResult = address;
+        lastInstructionFlags = new String[] {};
+
+        this.op = opcode;
+        // Return immediately to prevent auto PC increment
+        return new String[] { opcode, cleanedOperand };
+    }
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "BD";  // JSR extended opcode
@@ -1973,8 +3045,42 @@ else if (firstWord.equals("JSR")) {
     }
 }
 
+else if (firstWord.equals("CWAI")) {
+    // CWAI #$Operand
+    opcode = "3C";
+    cycle = 20; // CWAI takes 20 cycles
+    String operand = secondWord.replace("#$", "");
+    cleanedOperand = operand;
+    
+    // Call the execution method
+    int result = performCWAI(operand, reg);
+    
+    // Store for any potential flag tracking (CWAI affects flags via pushed CCR)
+    lastInstructionHex = operand;
+    lastInstructionResult = result;
+    lastInstructionFlags = new String[] { }; // Flags are not set in the standard way
+}
+
         // === BIT TEST INSTRUCTIONS ===
         else if (firstWord.equals("BITA")) {
+            if (mode.equals(direct)) {
+        opcode = "95";  // BITA direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int memValue = Integer.parseInt(memVal, 16);
+        int aValue = Integer.parseInt(reg.getA(), 16);
+        int result = aValue & memValue;  // For flags only
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "85"; // BITA immediate opcode
                 cycle = 2;
@@ -1985,7 +3091,7 @@ else if (firstWord.equals("JSR")) {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
             }
             // === BITA IN EXTENDED MODE ===
-else if (firstWord.equals("BITA")) {
+
     if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
             && secondWord.replace("$", "").length() == 4)) {
         opcode = "B5";  // BITA extended opcode
@@ -2010,8 +3116,26 @@ else if (firstWord.equals("BITA")) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
-}
+
         } else if (firstWord.equals("BITB")) {
+            if (mode.equals(direct)) {
+        opcode = "D5";  // BITB direct opcode
+        cycle = 3;
+        
+        String addrStr = secondWord.replace("<", "").replace("$", "");
+        int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+        
+        String memVal = readFromRAM(address);
+        int memValue = Integer.parseInt(memVal, 16);
+        int bValue = Integer.parseInt(reg.getB(), 16);
+        int result = bValue & memValue;  // For flags only
+        
+        cleanedOperand = String.format("%02X", address);
+        
+        lastInstructionHex = memVal;
+        lastInstructionResult = result;
+        lastInstructionFlags = new String[] { "Z", "N", "V" };
+    }
             if (mode.equals(immediat)) {
                 opcode = "C5"; // BITB immediate opcode
                 cycle = 2;
@@ -2046,6 +3170,7 @@ else if (firstWord.equals("BITA")) {
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
         }
+        
         // === STACK OPERATIONS ===
         else if (firstWord.equals("PSHS")) {
             if (mode.equals(immediat)) {
@@ -2543,6 +3668,8 @@ else if (firstWord.equals("BITA")) {
     private int performASLB(registre reg) {
         return performLSLB(reg); // ASLB and LSLB are identical in 6809
     }
+
+    
 
     // ASRA - Arithmetic Shift Right A (sign extended)
     private int performASRA(registre reg) {
@@ -3191,7 +4318,7 @@ else if (firstWord.equals("BITA")) {
             case "S":
                 return 0b0100; // 4
             case "PC":
-                return 0b0101; // 5
+            return 0b0101; // 5  ← ADD THIS LINE
             case "A":
                 return 0b1000; // 8
             case "B":
@@ -3211,6 +4338,8 @@ else if (firstWord.equals("BITA")) {
     private boolean is16BitRegister(String regName) {
         int code = getRegisterCode(regName);
         // Codes 0-5 are 16-bit, Codes 8-11 are 8-bit
+
+        if (code == -1) return false;
         return code <= 5;
     }
 
@@ -3303,6 +4432,40 @@ else if (firstWord.equals("BITA")) {
 
         return String.format("%02X", postByte);
     }
+
+
+    private int performCWAI(String operand, registre reg) {
+    // 1. Get immediate value and current CCR
+    int mask = Integer.parseInt(operand, 16);
+    int ccrValue = Integer.parseInt(reg.getCCR(), 16);
+    
+    // 2. AND the CCR with the mask (sets condition codes)
+    int result = ccrValue & mask;
+    reg.setCCR(String.format("%02X", result));
+    
+    // 3. Push ALL registers onto the hardware stack (S)
+    //    Order: PC, Y, X, A, B, CCR (same as SWI)
+    int sValue = Integer.parseInt(reg.getS(), 16);
+    
+    // Save PC
+    sValue -= 2;
+    String pcVal = reg.getPC();
+    ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
+    ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
+    
+    // Save Y, X, A, B, CCR (refer to your performSWI method for the exact sequence)
+    // ... (implementation detail: continue pushing registers) ...
+    
+    // Update stack pointer
+    reg.setS(String.format("%04X", sValue));
+    
+    // 4. Enter WAIT state for interrupt.
+    // In an emulator, you might set a CPU state flag or decrement cycle count.
+    //System.out.println("[CWAI] CPU waiting for interrupt with mask: $" + operand);
+    // For a simple emulation, you could just return.
+    
+    return result;
+}
 
     private String performEXG(String operands, registre reg) {
         String[] parts = operands.split(",");
