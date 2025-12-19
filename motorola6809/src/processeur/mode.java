@@ -83,10 +83,14 @@ public class mode {
     // Process instruction and set opcode/cycle
     // COMBINED METHOD: Process instruction, convert to opcode, update registers
     public String[] processAndConvertInstruction(String firstWord, String secondWord, registre reg) {
+        // Note: skipPCIncrement flag is NOT reset here - it's reset by pas.java after checking it
+        // This ensures the flag persists until pas.java has a chance to check it
+        
         String mode = determineMode(secondWord);
         String opcode = "00";
         String cleanedOperand = secondWord;
         this.reg = reg; // STORE THE REGISTER FOR LATER USE
+        boolean pcChangedManually = false; // Flag to prevent automatic PC increment for control flow instructions
 
         if (firstWord.equals("LDA")) {
             // In the LDA section, add this after the indexed mode handling:
@@ -1214,6 +1218,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour SUBA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "A0", 4, this::performSubtractionA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("SUBB")) {
             // Add after SUBB immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1259,6 +1270,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour SUBB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "E0", 4, this::performSubtractionB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("SUBD")) {
             // Add after SUBD immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1311,6 +1329,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour SUBD
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "A3", 6, this::performSubtractionD);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } // NEW COMPARE INSTRUCTIONS
         else if (firstWord.equals("CMPA")) {
             // Add after CMPA immediate/extended sections:
@@ -1369,6 +1394,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "A1", 4, this::performCompareA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPB")) {
             // Add after CMPB immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1418,6 +1450,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "E1", 4, this::performCompareB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPD")) {
             // Add after CMPD immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1475,6 +1514,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPD
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "10A3", 7, this::performCompareD);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPS")) {
             // Add after CMPS immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1528,6 +1574,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPS
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "11AC", 7, this::performCompareS);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPU")) {
             // Add after CMPU immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1580,6 +1633,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPU
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "11A3", 7, this::performCompareU);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPX")) {
             // Add after CMPX immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1633,6 +1693,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPX
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "AC", 6, this::performCompareX);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("CMPY")) {
             // Add after CMPY immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1686,6 +1753,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour CMPY
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "10AC", 7, this::performCompareY);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } // === ADD INSTRUCTIONS ===
         else if (firstWord.equals("ADDA")) {
             // Add after ADDA immediate/extended sections:
@@ -1732,6 +1806,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour ADDA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "AB", 4, this::performAdditionA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ADDB")) {
             // Add after ADDB immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1777,6 +1858,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour ADDB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "EB", 4, this::performAdditionB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ADDD")) {
             // Add after ADDD immediate/extended sections:
 if (mode.equals(direct)) {
@@ -1829,6 +1917,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
     }
+            // PHASE: Support du mode indexé pour ADDD
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedALU(secondWord, "E3", 6, this::performAdditionD);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         }
 
         // === AND INSTRUCTIONS ===
@@ -1879,6 +1974,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour ANDA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "A4", 4, this::performAndA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ANDB")) {
             if (mode.equals(direct)) {
         opcode = "D4";  // ANDB direct opcode
@@ -1923,6 +2025,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour ANDB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "E4", 4, this::performAndB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ANDCC")) {
             if (mode.equals(immediat)) {
                 opcode = "1C";
@@ -1980,6 +2089,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour ORA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "AA", 4, this::performOrA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ORB")) {
             if (mode.equals(direct)) {
         opcode = "DA";  // ORB direct opcode
@@ -2024,6 +2140,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour ORB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "EA", 4, this::performOrB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("ORCC")) {
             if (mode.equals(immediat)) {
                 opcode = "1A";
@@ -2081,6 +2204,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour EORA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "A8", 4, this::performEorA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("EORB")) {
             if (mode.equals(direct)) {
         opcode = "D8";  // EORB direct opcode
@@ -2125,6 +2255,13 @@ if (mode.equals(direct)) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour EORB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "E8", 4, this::performEorB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         }
 
         // === ADD WITH CARRY INSTRUCTIONS ===
@@ -2967,6 +3104,7 @@ else if (firstWord.equals("JMP")) {
         
         // Jump to address (set PC)
         reg.setPC(address);
+        pcChangedManually = true; // PC was manually changed, don't auto-increment
         
         cleanedOperand = String.format("%02X", address);
 
@@ -2988,6 +3126,7 @@ else if (firstWord.equals("JMP")) {
         
         // Jump to address (set PC)
         reg.setPC(address);
+        pcChangedManually = true; // PC was manually changed, don't auto-increment
         
         cleanedOperand = addr;
 
@@ -3001,6 +3140,65 @@ else if (firstWord.equals("JMP")) {
         this.op = opcode;
         // CRITICAL: Return here to prevent auto PC increment!
         return new String[] { opcode, cleanedOperand };
+    }
+    // PHASE: Support du mode indexé pour JMP
+    else if (mode.equals(indexe)) {
+        opcode = "6E";  // JMP indexed opcode
+        cycle = 3;      // JMP indexed takes 3 cycles
+        
+        // Parse indexed mode and calculate effective address
+        String parseResult = parseIndexedMode(secondWord);
+        String[] parts = parseResult.split(":");
+        String type = parts[0];
+        
+        // PHASE 6: Indirect Flag Extraction
+        boolean isIndirect = type.contains("_INDIRECT");
+        String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+        
+        int effectiveAddr = 0;
+        
+        if (cleanType.equals("ACC_OFFSET")) {
+            // PHASE 3: Offset accumulateur
+            String acc = parts[1]; // A, B, ou D
+            String indexReg = parts[2]; // X, Y, U, S
+            effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+            cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+        } else if (!cleanType.equals("UNKNOWN")) {
+            // PHASE 2: Autres types (offsets, auto-inc/dec)
+            String register = parts[1];
+            int value = Integer.parseInt(parts[2]);
+            effectiveAddr = calculateIndexedAddress(type, register, value);
+            cleanedOperand = generatePostByte(type, register, value);
+            
+            // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+            if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                String offsetHex = String.format("%02X", value & 0xFF);
+                cleanedOperand += offsetHex;
+            } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                String offsetHex = String.format("%04X", value & 0xFFFF);
+                cleanedOperand += offsetHex;
+            }
+        } else {
+            System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+            cleanedOperand = "";
+        }
+        
+        if (!cleanType.equals("UNKNOWN")) {
+            // Jump to effective address (set PC)
+            reg.setPC(effectiveAddr);
+            pcChangedManually = true; // PC was manually changed, don't auto-increment
+            
+            // JMP doesn't affect flags
+            lastInstructionHex = String.format("%04X", effectiveAddr);
+            lastInstructionResult = effectiveAddr;
+            lastInstructionFlags = new String[] {};
+            
+            skipPCIncrement = true;
+            
+            this.op = opcode;
+            // CRITICAL: Return here to prevent auto PC increment!
+            return new String[] { opcode, cleanedOperand };
+        }
     }
 }
 
@@ -3030,6 +3228,7 @@ else if (firstWord.equals("JSR")) {
         
         // Jump to subroutine
         reg.setPC(address);
+        pcChangedManually = true; // PC was manually changed, don't auto-increment
         
         cleanedOperand = String.format("%02X", address);
 
@@ -3066,6 +3265,7 @@ else if (firstWord.equals("JSR")) {
         
         // Jump to subroutine
         reg.setPC(address);
+        pcChangedManually = true; // PC was manually changed, don't auto-increment
         
         cleanedOperand = addr;
 
@@ -3077,6 +3277,81 @@ else if (firstWord.equals("JSR")) {
         this.op = opcode;
         // Return immediately to prevent auto PC increment
         return new String[] { opcode, cleanedOperand };
+    }
+    // PHASE: Support du mode indexé pour JSR
+    else if (mode.equals(indexe)) {
+        opcode = "AD";  // JSR indexed opcode
+        cycle = 7;      // JSR indexed takes 7 cycles
+        
+        // Parse indexed mode and calculate effective address
+        String parseResult = parseIndexedMode(secondWord);
+        String[] parts = parseResult.split(":");
+        String type = parts[0];
+        
+        // PHASE 6: Indirect Flag Extraction
+        boolean isIndirect = type.contains("_INDIRECT");
+        String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+        
+        int effectiveAddr = 0;
+        
+        if (cleanType.equals("ACC_OFFSET")) {
+            // PHASE 3: Offset accumulateur
+            String acc = parts[1]; // A, B, ou D
+            String indexReg = parts[2]; // X, Y, U, S
+            effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+            cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+        } else if (!cleanType.equals("UNKNOWN")) {
+            // PHASE 2: Autres types (offsets, auto-inc/dec)
+            String register = parts[1];
+            int value = Integer.parseInt(parts[2]);
+            effectiveAddr = calculateIndexedAddress(type, register, value);
+            cleanedOperand = generatePostByte(type, register, value);
+            
+            // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+            if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                String offsetHex = String.format("%02X", value & 0xFF);
+                cleanedOperand += offsetHex;
+            } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                String offsetHex = String.format("%04X", value & 0xFFFF);
+                cleanedOperand += offsetHex;
+            }
+        } else {
+            System.out.println("Mode indexé non supporté ou invalide: " + secondWord);
+            cleanedOperand = "";
+        }
+        
+        if (!cleanType.equals("UNKNOWN")) {
+            // Get current PC (which already points to next instruction)
+            // Note: PC will be incremented after this instruction, so we push the current PC
+            int currentPC = Integer.parseInt(reg.getPC(), 16);
+            
+            // Push return address onto stack
+            int sValue = Integer.parseInt(reg.getS(), 16);
+            
+            // Decrement stack and push high byte first (big endian)
+            sValue -= 2;
+            String pcVal = String.format("%04X", currentPC);
+            ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
+            ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
+            
+            // Update stack pointer
+            reg.setS(String.format("%04X", sValue));
+            
+            // Jump to subroutine (set PC to effective address)
+            reg.setPC(effectiveAddr);
+            pcChangedManually = true; // PC was manually changed, don't auto-increment
+            
+            // JSR doesn't affect flags
+            lastInstructionHex = String.format("%04X", effectiveAddr);
+            lastInstructionResult = effectiveAddr;
+            lastInstructionFlags = new String[] {};
+            
+            skipPCIncrement = true;
+            
+            this.op = opcode;
+            // CRITICAL: Return here to prevent auto PC increment!
+            return new String[] { opcode, cleanedOperand };
+        }
     }
 }
 
@@ -3151,6 +3426,13 @@ else if (firstWord.equals("CWAI")) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour BITA
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "A5", 4, this::performBitTestA);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
 
         } else if (firstWord.equals("BITB")) {
             if (mode.equals(direct)) {
@@ -3204,6 +3486,13 @@ else if (firstWord.equals("CWAI")) {
         lastInstructionResult = result;
         lastInstructionFlags = new String[] { "Z", "N", "V" };
     }
+            // PHASE: Support du mode indexé pour BITB
+            else if (mode.equals(indexe)) {
+                String[] result = handleIndexedALU(secondWord, "E5", 4, this::performBitTestB);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         }
         
         // === STACK OPERATIONS ===
@@ -3417,6 +3706,7 @@ else if (firstWord.equals("CWAI")) {
             cycle = 5;
             cleanedOperand = "";
             int result = performRTS(reg);
+            pcChangedManually = true; // RTS modifies PC (pulls return address from stack)
             lastInstructionHex = "";
             lastInstructionResult = result;
             lastInstructionFlags = new String[] {};
@@ -3425,6 +3715,7 @@ else if (firstWord.equals("CWAI")) {
             cycle = 15; // RTI is complex, restores many registers
             cleanedOperand = "";
             int result = performRTI(reg);
+            pcChangedManually = true; // RTI modifies PC (restores PC from stack)
             lastInstructionHex = "";
             lastInstructionResult = result;
             lastInstructionFlags = new String[] { "Z", "N", "V", "C" }; // Restores all flags
@@ -3677,13 +3968,16 @@ else if (firstWord.equals("CWAI")) {
             }
 
             // Incrémenter le PC avec masque 16-bits pour éviter l'overflow
-            int currentPC = Integer.parseInt(reg.getPC(), 16);
-            int newPC = (currentPC + instructionSize) & 0xFFFF; // Masque pour rester dans 16-bits
-            reg.setPC(newPC);
+            // BUT: Skip if PC was manually changed by control flow instructions (JMP, JSR, etc.)
+            if (!pcChangedManually && !skipPCIncrement) {
+                int currentPC = Integer.parseInt(reg.getPC(), 16);
+                int newPC = (currentPC + instructionSize) & 0xFFFF; // Masque pour rester dans 16-bits
+                reg.setPC(newPC);
+            }
         }
         
-        // Reset the flag for next instruction
-    skipPCIncrement = false;
+        // Note: skipPCIncrement is NOT reset here - it's reset at the start of the next instruction
+        // This allows pas.java to check the flag after processAndConvertInstruction returns
 
         return new String[] { opcode, cleanedOperand };
     }
@@ -3923,6 +4217,22 @@ else if (firstWord.equals("CWAI")) {
         return result;
     }
     private boolean skipPCIncrement = false;
+    
+    /**
+     * Returns true if the PC was manually changed by a control flow instruction (JMP, JSR, RTS, RTI).
+     * This is used by the execution engine to prevent overwriting the PC value.
+     * @return true if PC should not be auto-updated, false otherwise
+     */
+    public boolean shouldSkipPCUpdate() {
+        return skipPCIncrement;
+    }
+    
+    /**
+     * Resets the skipPCIncrement flag. Called by pas.java after checking the flag.
+     */
+    public void resetSkipPCIncrementFlag() {
+        skipPCIncrement = false;
+    }
 
     // LSLB - Logical Shift Left B (same as ASLB)
     private int performLSLB(registre reg) {
@@ -6230,6 +6540,156 @@ else if (this.op.equals("B1") || this.op.equals("F1") ||
         }
 
         return String.format("%02X", postByte);
+    }
+
+    /**
+     * Handles 8-bit Indexed ALU operations (ADD, SUB, AND, OR, EOR, CMP, BIT).
+     * 1. Calculates effective address.
+     * 2. Reads 1 byte from RAM.
+     * 3. Executes the math operation using the read value.
+     * 
+     * @param operand The indexed operand (e.g., ",X", "5,Y", "A,X")
+     * @param hexOpcode The opcode in hex format (e.g., "AB", "A0", "A4")
+     * @param cycleCount The cycle count for this instruction (typically 4 for indexed)
+     * @param mathOperation A BiFunction that performs the math operation (e.g., performAdditionA, performSubtractionA)
+     * @return String array with [opcode, cycle, cleanedOperand]
+     */
+    private String[] handleIndexedALU(String operand, String hexOpcode, int cycleCount, java.util.function.BiFunction<String, registre, Integer> mathOperation) {
+        String parseResult = parseIndexedMode(operand);
+        String[] parts = parseResult.split(":");
+        String type = parts[0];
+
+        // PHASE 6: Indirect Flag Extraction
+        boolean isIndirect = type.contains("_INDIRECT");
+        String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
+        int effectiveAddr = 0;
+        String cleanedOperand = "";
+
+        if (cleanType.equals("ACC_OFFSET")) {
+            // PHASE 3: Offset accumulateur
+            String acc = parts[1]; // A, B, ou D
+            String indexReg = parts[2]; // X, Y, U, S
+            // Pass isIndirect
+            effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+            // Generate post-byte (Pass isIndirect)
+            cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+        } else if (!cleanType.equals("UNKNOWN")) {
+            // PHASE 2: Autres types (offsets, auto-inc/dec)
+            String register = parts[1];
+            int value = Integer.parseInt(parts[2]);
+            // Pass dirty type (calculateIndexedAddress handles it)
+            effectiveAddr = calculateIndexedAddress(type, register, value);
+            // Pass dirty type (generatePostByte handles it)
+            cleanedOperand = generatePostByte(type, register, value);
+
+            // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+            if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                String offsetHex = String.format("%02X", value & 0xFF);
+                cleanedOperand += offsetHex;
+            } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                String offsetHex = String.format("%04X", value & 0xFFFF);
+                cleanedOperand += offsetHex;
+            }
+        } else {
+            System.out.println("Mode indexé non supporté ou invalide: " + operand);
+            cleanedOperand = "";
+        }
+
+        if (!cleanType.equals("UNKNOWN")) {
+            // Read 1 byte (2 hex chars) from RAM at effectiveAddr
+            String ramValue = readFromRAM(effectiveAddr);
+
+            // Execute the math operation using the read value
+            int result = mathOperation.apply(ramValue, reg);
+
+            // Store for flag calculation
+            lastInstructionHex = ramValue;
+            lastInstructionResult = result;
+            // Flags depend on the operation type (most use Z, N, V, C; BIT uses Z, N, V)
+            // We'll set the flags based on the operation, but for now use common flags
+            // The actual flags are set by the performXXX methods
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+
+            return new String[] { hexOpcode, String.valueOf(cycleCount), cleanedOperand };
+        } else {
+            return new String[] { "00", "0", "" };
+        }
+    }
+
+    /**
+     * Handles 16-bit Indexed ALU operations (ADDD, SUBD, CMPD, CMPX, CMPY, CMPU, CMPS).
+     * 1. Calculates effective address.
+     * 2. Reads 16 bits (2 bytes) from RAM.
+     * 3. Executes the math operation using the read value.
+     * 
+     * @param operand The indexed operand (e.g., ",X", "5,Y", "A,X")
+     * @param hexOpcode The opcode in hex format (e.g., "E3", "A3", "10A3")
+     * @param cycleCount The cycle count for this instruction
+     * @param mathOperation A BiFunction that performs the math operation (e.g., performAdditionD, performCompareX)
+     * @return String array with [opcode, cycle, cleanedOperand]
+     */
+    private String[] handle16BitIndexedALU(String operand, String hexOpcode, int cycleCount, java.util.function.BiFunction<String, registre, Integer> mathOperation) {
+        String parseResult = parseIndexedMode(operand);
+        String[] parts = parseResult.split(":");
+        String type = parts[0];
+
+        // PHASE 6: Indirect Flag Extraction
+        boolean isIndirect = type.contains("_INDIRECT");
+        String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
+        int effectiveAddr = 0;
+        String cleanedOperand = "";
+
+        if (cleanType.equals("ACC_OFFSET")) {
+            // PHASE 3: Offset accumulateur
+            String acc = parts[1]; // A, B, ou D
+            String indexReg = parts[2]; // X, Y, U, S
+            // Pass isIndirect
+            effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+            // Generate post-byte (Pass isIndirect)
+            cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+        } else if (!cleanType.equals("UNKNOWN")) {
+            // PHASE 2: Autres types (offsets, auto-inc/dec)
+            String register = parts[1];
+            int value = Integer.parseInt(parts[2]);
+            // Pass dirty type (calculateIndexedAddress handles it)
+            effectiveAddr = calculateIndexedAddress(type, register, value);
+            // Pass dirty type (generatePostByte handles it)
+            cleanedOperand = generatePostByte(type, register, value);
+
+            // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+            if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                String offsetHex = String.format("%02X", value & 0xFF);
+                cleanedOperand += offsetHex;
+            } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                String offsetHex = String.format("%04X", value & 0xFFFF);
+                cleanedOperand += offsetHex;
+            }
+        } else {
+            System.out.println("Mode indexé non supporté ou invalide: " + operand);
+            cleanedOperand = "";
+        }
+
+        if (!cleanType.equals("UNKNOWN")) {
+            // Read 2 bytes from RAM (Big Endian: High @ addr, Low @ addr+1)
+            String highByte = readFromRAM(effectiveAddr);
+            String lowByte = readFromRAM(effectiveAddr + 1);
+            String val16 = highByte + lowByte;
+
+            // Execute the math operation using the read value
+            int result = mathOperation.apply(val16, reg);
+
+            // Store for flag calculation
+            lastInstructionHex = val16;
+            lastInstructionResult = result;
+            // Flags depend on the operation type (most use Z, N, V, C)
+            lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+
+            return new String[] { hexOpcode, String.valueOf(cycleCount), cleanedOperand };
+        } else {
+            return new String[] { "00", "0", "" };
+        }
     }
 
     /**

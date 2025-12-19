@@ -54,8 +54,16 @@ public void updateDisplayRAM(String value, int address) {
             updateRAMWithInstruction(firstWord, opcode, cleanedOperand);
 
             // Update PC to current ROM address (pointing to next instruction)
-            int currentRomAddress = rom.getCurrentAddressInt();
-            reg.setPC(currentRomAddress);
+            // BUT: Skip if PC was manually changed by control flow instructions (JMP, JSR, RTS, RTI)
+            boolean shouldSkip = modeDetector.shouldSkipPCUpdate();
+            if (!shouldSkip) {
+                int currentRomAddress = rom.getCurrentAddressInt();
+                reg.setPC(currentRomAddress);
+                // Only reset flag if we actually updated the PC (normal instruction)
+                modeDetector.resetSkipPCIncrementFlag();
+            } else {
+                // DO NOT reset flag here - it needs to persist for END instruction check
+            }
 
         } else if (currentLine.get(0).equals("END")) {
             // Store END instruction in ROM
@@ -65,17 +73,13 @@ public void updateDisplayRAM(String value, int address) {
             updateRAMWithInstruction("END", "3F", "");
 
             // Update PC to point to the address after END
-            int currentRomAddress = rom.getCurrentAddressInt();
-            reg.setPC(currentRomAddress - 1);
-        }
-    }
-
-    private void debugStackMemory() {
-        System.out.println("\n=== STACK MEMORY DEBUG (00F0-0100) ===");
-        for (int addr = 0x00F0; addr <= 0x0100; addr++) {
-            String addrStr = String.format("%04X", addr);
-            String value = ram.getram().get(addrStr);
-            System.out.println(addrStr + ": " + (value != null ? value : "null"));
+            // BUT: Skip if PC was manually changed by control flow instructions (JMP, JSR, RTS, RTI)
+            if (!modeDetector.shouldSkipPCUpdate()) {
+                int currentRomAddress = rom.getCurrentAddressInt();
+                reg.setPC(currentRomAddress - 1);
+            }
+            // Reset the flag AFTER checking it
+            modeDetector.resetSkipPCIncrementFlag();
         }
     }
 
@@ -227,85 +231,6 @@ public void updateDisplayRAM(String value, int address) {
         }
     }
 
-    private void updateRAMWithData(String instruction, String data) {
-        // Clear RAM first - DISABLED TO PRESERVE STATE
-        /*
-         * for (int i = 0; i < 65536; i++) {
-         * String addr = String.format("%04X", i);
-         * ram.getram().put(addr, "00");
-         * }
-         */
-
-        // If no data, just show cleared RAM
-        if (data.isEmpty()) {
-            return;
-        }
-
-        // Store data in 2-character chunks starting from address 0000
-        int address = 0;
-
-        // For arithmetic/logical operations, store both result and operand
-        if (instruction.startsWith("ADD") || instruction.startsWith("SUB") ||
-                instruction.startsWith("AND") || instruction.startsWith("OR") ||
-                instruction.startsWith("EOR") || instruction.startsWith("CMP")) {
-
-            // Store result in address 0000
-            if (instruction.endsWith("A")) {
-                storeDataChunk(reg.getA(), address++);
-            } else if (instruction.endsWith("B")) {
-                storeDataChunk(reg.getB(), address++);
-            } else if (instruction.endsWith("D")) {
-                // For 16-bit registers, split into two bytes
-                String regValue = reg.getD();
-                storeDataChunk(regValue.substring(0, 2), address++); // High byte
-                storeDataChunk(regValue.substring(2), address++); // Low byte
-            }
-
-            // Store operand in next address
-            storeDataChunk(data, address);
-
-        } else {
-            // For load instructions, just store the data
-            storeDataChunk(data, address);
-        }
-    }
-
-    private void storeDataChunk(String data, int address) {
-    if (data.isEmpty())
-        return;
-    
-    // If data is 4 characters (2 bytes), split it
-    if (data.length() == 4) {
-        // Store high byte at current address
-        String highByte = data.substring(0, 2);
-        String addrHigh = String.format("%04X", address);
-        ram.getram().put(addrHigh, highByte);
-        
-        // Store low byte at next address
-        String lowByte = data.substring(2, 4);
-        String addrLow = String.format("%04X", address + 1);
-        ram.getram().put(addrLow, lowByte);
-    } 
-    // If data is 2 characters (1 byte)
-    else if (data.length() == 2) {
-        String addr = String.format("%04X", address);
-        ram.getram().put(addr, data);
-    }
-    // // If data is other length, pad or truncate
-    // else if (data.length() > 4) {
-    //     // Take first 4 characters and split
-    //     String chunk = data.substring(0, 4);
-    //     storeDataChunk(chunk, address);
-    // } 
-    // else if (data.length() < 2) {
-    //     // Pad with leading zero
-    //     String padded = String.format("%2s", data).replace(' ', '0');
-    //     String addr = String.format("%04X", address);
-    //     ram.getram().put(addr, padded);
-    // }
-    // REMOVE THE ENTIRE BOTTOM SECTION BELOW THIS LINE!
-}
-
     private void showCurrentState(int stepIndex) {
         ArrayList<String> currentLine = assemblyLines.get(stepIndex);
         System.out.println("\n=== STATE AFTER LINE " + (stepIndex + 1) + " ===");
@@ -334,29 +259,6 @@ public void updateDisplayRAM(String value, int address) {
         if (!currentLine.get(0).equals("END")) {
             modeDetector.calculateLastInstructionFlags();
         }
-    }
-
-    private int calculateROMEndAddress(int stepIndex) {
-        // Calculate how many bytes have been written to ROM so far
-        int bytesUsed = 0;
-        for (int i = 0; i <= stepIndex; i++) {
-            ArrayList<String> line = assemblyLines.get(i);
-            if (line.size() >= 1) {
-                String firstWord = line.get(0);
-                if (firstWord.equals("END")) {
-                    bytesUsed += 1; // END takes 1 byte
-                } else {
-                    // Count bytes for this instruction
-                    String secondWord = (line.size() > 1) ? line.get(1) : "";
-                    if (secondWord.contains("#")) {
-                        bytesUsed += 2; // Instruction + operand
-                    } else {
-                        bytesUsed += 1; // Instruction only
-                    }
-                }
-            }
-        }
-        return bytesUsed > 0 ? bytesUsed - 1 : 0;
     }
 
     private void resetAndExecuteUpTo(int step) {
@@ -409,11 +311,15 @@ public void updateDisplayRAM(String value, int address) {
     private void executeFinalResult() {
         System.out.println("\n=== EXECUTING ALL INSTRUCTIONS ===");
         resetToInitialState();
+        // Reset the skipPCIncrement flag at the start of execution
+        modeDetector.resetSkipPCIncrementFlag();
 
         for (int i = 0; i < assemblyLines.size(); i++) {
             executeSingleStep(i);
         }
 
+        // Reset the flag after all instructions are executed
+        modeDetector.resetSkipPCIncrementFlag();
         showFinalState();
     }
 
