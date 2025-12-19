@@ -891,6 +891,13 @@ if (mode.equals(direct)) {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
+            // PHASE: Support du mode indexé pour LDD
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedLoad(secondWord, "EC", 6, reg::setD);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("LDS")) {
             // In the LDS section, add this after the immediate mode handling:
  if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
@@ -957,6 +964,13 @@ if (mode.equals(direct)) {
                 lastInstructionResult = Integer.parseInt(cleanedOperand, 16);
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
             }
+            // PHASE: Support du mode indexé pour LDS
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedLoad(secondWord, "10EE", 7, reg::setS);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("LDU")) {
             // In the LDU section, add this after the immediate mode handling:
  if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
@@ -1014,6 +1028,13 @@ if (mode.equals(direct)) {
                 lastInstructionResult = Integer.parseInt(cleanedOperand, 16);
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
+            }
+            // PHASE: Support du mode indexé pour LDU
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedLoad(secondWord, "EE", 6, reg::setU);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
             }
         } else if (firstWord.equals("LDX")) {
             // In the LDX section, add this after the immediate mode handling:
@@ -1075,6 +1096,13 @@ if (mode.equals(direct)) {
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
             }
+            // PHASE: Support du mode indexé pour LDX
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedLoad(secondWord, "AE", 6, reg::setX);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
+            }
         } else if (firstWord.equals("LDY")) {
             // In the LDY section, add this after the immediate mode handling:
  if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
@@ -1133,6 +1161,13 @@ if (mode.equals(direct)) {
                 lastInstructionResult = Integer.parseInt(cleanedOperand, 16);
                 lastInstructionFlags = new String[] { "Z", "N", "V" };
 
+            }
+            // PHASE: Support du mode indexé pour LDY
+            else if (mode.equals(indexe)) {
+                String[] result = handle16BitIndexedLoad(secondWord, "10AE", 7, reg::setY);
+                opcode = result[0];
+                cycle = Integer.parseInt(result[1]);
+                cleanedOperand = result[2];
             }
         } else if (firstWord.equals("SUBA")) {
             // Add after SUBA immediate/extended sections:
@@ -6195,6 +6230,82 @@ else if (this.op.equals("B1") || this.op.equals("F1") ||
         }
 
         return String.format("%02X", postByte);
+    }
+
+    /**
+     * Handles the logic for 16-bit Indexed Load instructions.
+     * 1. Parses the indexed operand.
+     * 2. Calculates the effective address (using existing engine).
+     * 3. Reads 16 bits (2 bytes) from RAM.
+     * 4. Updates the target register.
+     * 5. Returns the Opcode, Cycle, and CleanedOperand components.
+     * 
+     * @param operand The indexed operand (e.g., ",X", "5,Y", "A,X")
+     * @param hexOpcode The opcode in hex format (e.g., "EC", "AE", "10AE")
+     * @param cycleCount The cycle count for this instruction
+     * @param registerSetter A Consumer that sets the target register (e.g., reg::setD, reg::setX)
+     * @return String array with [opcode, cycle, cleanedOperand]
+     */
+    private String[] handle16BitIndexedLoad(String operand, String hexOpcode, int cycleCount, java.util.function.Consumer<String> registerSetter) {
+        String parseResult = parseIndexedMode(operand);
+        String[] parts = parseResult.split(":");
+        String type = parts[0];
+
+        // PHASE 6: Indirect Flag Extraction
+        boolean isIndirect = type.contains("_INDIRECT");
+        String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+
+        int effectiveAddr = 0;
+        String cleanedOperand = "";
+
+        if (cleanType.equals("ACC_OFFSET")) {
+            // PHASE 3: Offset accumulateur
+            String acc = parts[1]; // A, B, ou D
+            String indexReg = parts[2]; // X, Y, U, S
+            // Pass isIndirect
+            effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+            // Generate post-byte (Pass isIndirect)
+            cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+        } else if (!cleanType.equals("UNKNOWN")) {
+            // PHASE 2: Autres types (offsets, auto-inc/dec)
+            String register = parts[1];
+            int value = Integer.parseInt(parts[2]);
+            // Pass dirty type (calculateIndexedAddress handles it)
+            effectiveAddr = calculateIndexedAddress(type, register, value);
+            // Pass dirty type (generatePostByte handles it)
+            cleanedOperand = generatePostByte(type, register, value);
+
+            // PHASE 4 & 5: Ajouter les octets d'offset au post-byte
+            if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                String offsetHex = String.format("%02X", value & 0xFF);
+                cleanedOperand += offsetHex;
+            } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                String offsetHex = String.format("%04X", value & 0xFFFF);
+                cleanedOperand += offsetHex;
+            }
+        } else {
+            System.out.println("Mode indexé non supporté ou invalide: " + operand);
+            cleanedOperand = "";
+        }
+
+        if (!cleanType.equals("UNKNOWN")) {
+            // Read 2 bytes from RAM (Big Endian: High @ addr, Low @ addr+1)
+            String highByte = readFromRAM(effectiveAddr);
+            String lowByte = readFromRAM(effectiveAddr + 1);
+            String val = highByte + lowByte;
+
+            // Update target register
+            registerSetter.accept(val);
+
+            // Store for flag calculation
+            lastInstructionHex = val;
+            lastInstructionResult = Integer.parseInt(val, 16);
+            lastInstructionFlags = new String[] { "Z", "N", "V" };
+
+            return new String[] { hexOpcode, String.valueOf(cycleCount), cleanedOperand };
+        } else {
+            return new String[] { "00", "0", "" };
+        }
     }
 
     /**
