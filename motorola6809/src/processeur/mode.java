@@ -40,7 +40,6 @@ public class mode {
         if (secondWord == null || secondWord.isEmpty()) {
             return inherent;
         }
-
         // PHASE 1: Détecter le mode indexé AVANT les autres modes
         // Le mode indexé se reconnaît par la présence d'une virgule ","
         if (secondWord.contains(",")) {
@@ -468,6 +467,57 @@ writeToRAM(address, reg.getB());  // Should write to 0080, not 0000
                     lastInstructionFlags = new String[] { "Z", "N", "V" };
                 }
             }
+        } else if (
+                firstWord.equals("INC") || firstWord.equals("DEC") || firstWord.equals("CLR") || firstWord.equals("COM") ||
+                firstWord.equals("NEG") || firstWord.equals("TST") || firstWord.equals("LSR") || firstWord.equals("LSL") ||
+                firstWord.equals("ASR") || firstWord.equals("ASL") || firstWord.equals("ROL") || firstWord.equals("ROR")) {
+
+            java.util.function.BiFunction<Integer, registre, Integer> op;
+            String extOpcode = "00";
+            String idxOpcode = "00";
+            int extCycle = 6;
+            int idxCycle = 6;
+
+            switch (firstWord) {
+                case "INC":
+                    extOpcode = "7C"; idxOpcode = "6C";
+                    op = this::performINC_Mem; break;
+                case "DEC":
+                    extOpcode = "7A"; idxOpcode = "6A";
+                    op = this::performDEC_Mem; break;
+                case "CLR":
+                    extOpcode = "7F"; idxOpcode = "6F";
+                    op = this::performCLR_Mem; break;
+                case "COM":
+                    extOpcode = "73"; idxOpcode = "63";
+                    op = this::performCOM_Mem; break;
+                case "NEG":
+                    extOpcode = "70"; idxOpcode = "60";
+                    op = this::performNEG_Mem; break;
+                case "TST":
+                    extOpcode = "7D"; idxOpcode = "6D";
+                    op = this::performTST_Mem; break;
+                case "LSR":
+                    extOpcode = "74"; idxOpcode = "64";
+                    op = this::performLSR_Mem; break;
+                case "ASR":
+                    extOpcode = "77"; idxOpcode = "67";
+                    op = this::performASR_Mem; break;
+                case "LSL": // alias of ASL
+                case "ASL":
+                    extOpcode = "78"; idxOpcode = "68";
+                    op = this::performASL_Mem; break;
+                case "ROL":
+                    extOpcode = "79"; idxOpcode = "69";
+                    op = this::performROL_Mem; break;
+                case "ROR":
+                    extOpcode = "76"; idxOpcode = "66";
+                    op = this::performROR_Mem; break;
+                default:
+                    op = this::performTST_Mem; // fallback
+            }
+
+            return handleRMW(firstWord, secondWord, extOpcode, idxOpcode, extCycle, idxCycle, op);
         }
         
         // Add this case after the STS case and before the LDD case
@@ -6616,6 +6666,86 @@ else if (this.op.equals("B1") || this.op.equals("F1") ||
             return new String[] { "00", "0", "" };
         }
     }
+
+    private String[] handleRMW(String firstWord, String secondWord, String extOpcode, String idxOpcode, int extCycle, int idxCycle,
+            java.util.function.BiFunction<Integer, registre, Integer> operation) {
+        String modeDetected = determineMode(secondWord);
+        int effectiveAddr = -1;
+        String cleanedOperand = "";
+        String opcodeSel = "00";
+        int cyclesSel = 0;
+
+        if (modeDetected.equals(indexe)) {
+            String parseResult = parseIndexedMode(secondWord);
+            String[] parts = parseResult.split(":");
+            String type = parts[0];
+            boolean isIndirect = type.contains("_INDIRECT");
+            String cleanType = isIndirect ? type.replace("_INDIRECT", "") : type;
+            if (!cleanType.equals("UNKNOWN")) {
+                if (cleanType.equals("ACC_OFFSET")) {
+                    String acc = parts[1];
+                    String indexReg = parts[2];
+                    effectiveAddr = calculateAccumulatorIndexed(acc, indexReg, isIndirect);
+                    cleanedOperand = generatePostByteAccOffset(acc, indexReg, isIndirect);
+                } else {
+                    String register = parts[1];
+                    int value = Integer.parseInt(parts[2]);
+                    effectiveAddr = calculateIndexedAddress(type, register, value);
+                    cleanedOperand = generatePostByte(type, register, value);
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT")) {
+                        cleanedOperand += String.format("%02X", value & 0xFF);
+                    } else if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT")) {
+                        cleanedOperand += String.format("%04X", value & 0xFFFF);
+                    }
+                }
+                opcodeSel = idxOpcode;
+                cyclesSel = idxCycle;
+            } else {
+                return new String[] { "00", "0", "" };
+            }
+        } else if (modeDetected.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                && secondWord.replace("$", "").length() == 4)) {
+            String addr = secondWord.replace(">", "").replace("$", "");
+            effectiveAddr = Integer.parseInt(addr, 16);
+            cleanedOperand = addr;
+            opcodeSel = extOpcode;
+            cyclesSel = extCycle;
+        } else {
+            return new String[] { "00", "0", "" };
+        }
+
+        String oldHex = readFromRAM(effectiveAddr);
+        int oldVal = Integer.parseInt(oldHex, 16) & 0xFF;
+        int newVal = operation.apply(oldVal, reg) & 0xFF;
+        if (!firstWord.equals("TST")) {
+            writeToRAM(effectiveAddr, String.format("%02X", newVal));
+        }
+        lastInstructionHex = String.format("%02X", oldVal);
+        lastInstructionResult = newVal;
+        lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+        this.cycle = cyclesSel;
+        return new String[] { opcodeSel, cleanedOperand };
+    }
+
+    private int getCCRInt() { return Integer.parseInt(reg.getCCR(), 16) & 0xFF; }
+    private void setCCRInt(int ccr) { reg.setCCR(String.format("%02X", ccr & 0xFF)); }
+    private void setZ(boolean on) { int c=getCCRInt(); c = on ? (c|0x04):(c&~0x04); setCCRInt(c); }
+    private void setN(boolean on) { int c=getCCRInt(); c = on ? (c|0x08):(c&~0x08); setCCRInt(c); }
+    private void setV(boolean on) { int c=getCCRInt(); c = on ? (c|0x02):(c&~0x02); setCCRInt(c); }
+    private void setC(boolean on) { reg.setCarryFlag(on?1:0); }
+    private void updateNZ(int val) { setZ((val & 0xFF)==0); setN((val & 0x80)!=0); }
+
+    private int performINC_Mem(int value, registre reg) { int r=(value+1)&0xFF; updateNZ(r); setV(r==0x80); return r; }
+    private int performDEC_Mem(int value, registre reg) { int r=(value-1)&0xFF; updateNZ(r); setV(r==0x7F); return r; }
+    private int performCLR_Mem(int value, registre reg) { int r=0; updateNZ(r); setV(false); setC(false); return r; }
+    private int performCOM_Mem(int value, registre reg) { int r=(~value)&0xFF; updateNZ(r); setV(false); setC(true); return r; }
+    private int performNEG_Mem(int value, registre reg) { int r=(-value)&0xFF; updateNZ(r); setV((value&0xFF)==0x80); setC((r&0xFF)!=0); return r; }
+    private int performTST_Mem(int value, registre reg) { int r=value&0xFF; updateNZ(r); setV(false); return r; }
+    private int performLSR_Mem(int value, registre reg) { int c=value&1; int r=(value>>>1)&0x7F; updateNZ(r); setN(false); setV(false); setC(c!=0); return r; }
+    private int performASR_Mem(int value, registre reg) { int c=value&1; int msb=value&0x80; int r=(value>>>1)|msb; r&=0xFF; updateNZ(r); setV(false); setC(c!=0); return r; }
+    private int performASL_Mem(int value, registre reg) { int c=(value>>>7)&1; int r=(value<<1)&0xFF; updateNZ(r); setC(c!=0); setV(((r&0x80)!=0) ^ (c!=0)); return r; }
+    private int performROL_Mem(int value, registre reg) { int oc=reg.getCarryFlag(); int c=(value>>>7)&1; int r=((value<<1)&0xFF)|(oc&1); updateNZ(r); setC(c!=0); setV(((r&0x80)!=0) ^ (c!=0)); return r; }
+    private int performROR_Mem(int value, registre reg) { int oc=reg.getCarryFlag(); int c=value&1; int r=((value>>>1)&0x7F)|((oc&1)<<7); updateNZ(r); setC(c!=0); setV(((r&0x80)!=0) ^ (c!=0)); return r; }
 
     /**
      * Handles 16-bit Indexed ALU operations (ADDD, SUBD, CMPD, CMPX, CMPY, CMPU, CMPS).
