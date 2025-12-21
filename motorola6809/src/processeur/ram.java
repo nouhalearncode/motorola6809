@@ -14,7 +14,7 @@ public class ram {
             String addr = String.format("%04X", i);
             ra.put(addr, "00");
         }
-        System.out.println("[RAM] Initialisée - 65536 octets disponibles (0000-FFFF)\n");
+       
     }
     
     public Map<String, String> getram() {

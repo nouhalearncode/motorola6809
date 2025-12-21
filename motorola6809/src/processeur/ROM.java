@@ -15,7 +15,7 @@ public class ROM {
             String addr = String.format("%04X", i); // 4-digit hex now
             memory.put(addr, "00");
         }
-        System.out.println("[ROM] Initialisée - 65536 octets disponibles (0000-FFFF)\n");
+        
     }
 
     public void debugMemory() {
@@ -26,6 +26,14 @@ public class ROM {
             System.out.println("DEBUG: " + addr + " = " + val + " (exists: " + memory.containsKey(addr) + ")");
         }
     }
+
+    // Add to ROM.java
+public void setWritePointer(int address) {
+    if (address >= 0 && address < 65536) {
+        currentAddress = address;
+        System.out.println("[ROM] Write pointer set to: " + String.format("%04X", address));
+    }
+}
 
     // ADD THIS METHOD - THIS IS WHAT'S MISSING
     public Map<String, String> getMemory() {
