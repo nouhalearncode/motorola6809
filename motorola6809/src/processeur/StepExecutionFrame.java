@@ -19,7 +19,7 @@ public class StepExecutionFrame extends JFrame {
     
     private RAMDisplayFrame ramViewer;
     private ROMDisplayFrame romViewer;
-    private RegisterDisplayFrame registerViewer;
+    private EnhancedRegisterDisplayFrame registerViewer;
     
     public StepExecutionFrame(pas stepExecutor, ram ram, ROM rom, registre reg, ArrayList<ArrayList<String>> lines) {
         this.stepExecutor = stepExecutor;
@@ -31,6 +31,9 @@ public class StepExecutionFrame extends JFrame {
         setSize(900, 700);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
+        
+        // Set logo
+        setLogo();
         
         // Program display area
         programTextArea = new JTextArea();
@@ -117,6 +120,17 @@ public class StepExecutionFrame extends JFrame {
         // Update state display
         updateStateDisplay();
         highlightCurrentLine();
+    }
+    
+    private void setLogo() {
+        try {
+            ImageIcon logo = new ImageIcon("logoprincipale.png");
+            if (logo.getIconWidth() > 0) {
+                setIconImage(logo.getImage());
+            }
+        } catch (Exception e) {
+            System.out.println("[StepFrame] Logo not found: " + e.getMessage());
+        }
     }
     
     private JButton createStyledButton(String text, Color bgColor) {
@@ -214,9 +228,7 @@ public class StepExecutionFrame extends JFrame {
         StringBuilder programText = new StringBuilder();
         programText.append("=== ASSEMBLY PROGRAM ===\n\n");
         
-        ArrayList<ArrayList<String>> lines = stepExecutor.getLineAtStep(0) != null ? 
-            new ArrayList<>() : new ArrayList<>();
-        
+        ArrayList<ArrayList<String>> lines = new ArrayList<>();
         for (int i = 0; i < stepExecutor.getTotalSteps(); i++) {
             lines.add(stepExecutor.getLineAtStep(i));
         }
@@ -224,11 +236,11 @@ public class StepExecutionFrame extends JFrame {
         for (int i = 0; i < lines.size(); i++) {
             String prefix;
             if (i == current - 1) {
-                prefix = ">>> ";  // Current line
+                prefix = ">>> ";
             } else if (i < current - 1) {
-                prefix = "[✓] ";  // Executed
+                prefix = "[✓] ";
             } else {
-                prefix = "    ";  // Not executed yet
+                prefix = "    ";
             }
             
             programText.append(String.format("%-4s%-4d | ", prefix, i + 1));
@@ -263,7 +275,7 @@ public class StepExecutionFrame extends JFrame {
     
     private void showRegisters() {
         if (registerViewer == null || !registerViewer.isDisplayable()) {
-            registerViewer = new RegisterDisplayFrame(reg);
+            registerViewer = new EnhancedRegisterDisplayFrame(reg, null);
             registerViewer.setLocation(950, 100);
         }
         registerViewer.updateRegisterDisplay();
