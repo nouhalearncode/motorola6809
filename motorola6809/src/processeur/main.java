@@ -489,6 +489,7 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.io.*;
 
 public class main {
     // Backend objects
@@ -517,10 +518,14 @@ public class main {
     private static JButton runButton;
     private static JButton newButton;
     private static JButton resetButton;
+    private static JButton saveButton;
+    private static JButton stopButton;
     
     // State flags
     private static boolean hasLoadedCode = false;
     private static boolean isExecuting = false;
+    private static volatile boolean stopExecution = false;  // Flag pour arrêter l'exécution
+    private static String currentLoadedCode = "";  // Stocke le code chargé
     
     public static void main(String[] args) {
         // Initialize backend
@@ -644,6 +649,16 @@ public class main {
         JButton regButton = createToolbarButton("Registers", new Color(100, 100, 100));
         regButton.addActionListener(e -> showRegisterFrame());
         
+        // **NEW: Save button**
+        saveButton = createToolbarButton("💾 Save", new Color(75, 0, 130));
+        saveButton.setEnabled(false);
+        saveButton.addActionListener(e -> saveCodeToFile());
+        
+        // **NEW: Stop button**
+        stopButton = createToolbarButton("⏹ Stop", new Color(180, 0, 0));
+        stopButton.setEnabled(false);
+        stopButton.addActionListener(e -> stopCurrentExecution());
+        
         toolBar.add(newButton);
         toolBar.addSeparator();
         toolBar.add(runButton);
@@ -654,6 +669,9 @@ public class main {
         toolBar.add(ramButton);
         toolBar.add(romButton);
         toolBar.add(regButton);
+        toolBar.addSeparator();
+        toolBar.add(saveButton);  // After Registers
+        toolBar.add(stopButton);  // After Save
         toolBar.add(Box.createHorizontalGlue());
         
         return toolBar;
@@ -667,6 +685,77 @@ public class main {
         button.setFocusPainted(false);
         button.setMargin(new Insets(5, 15, 5, 15));
         return button;
+    }
+    
+    // **NEW METHOD: Save code to file**
+    private static void saveCodeToFile() {
+        if (currentLoadedCode.isEmpty()) {
+            JOptionPane.showMessageDialog(mainFrame,
+                "Aucun code à sauvegarder!",
+                "Erreur",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Sauvegarder le code assembleur");
+        fileChooser.setSelectedFile(new File("program_6809.asm"));
+        
+        int userSelection = fileChooser.showSaveDialog(mainFrame);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
+                // Write header
+                writer.write("; Motorola 6809 Assembly Program\n");
+                writer.write("; Saved: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + "\n");
+                writer.write("; Total instructions: " + myList.size() + "\n");
+                writer.write(";\n");
+                writer.write("; ===========================================\n\n");
+                
+                // Write code
+                writer.write(currentLoadedCode);
+                
+                // Write footer
+                writer.write("\n\n; ===========================================\n");
+                writer.write("; End of program\n");
+                
+                addToLog("✓ Code sauvegardé: " + fileToSave.getName());
+                JOptionPane.showMessageDialog(mainFrame,
+                    "Code sauvegardé avec succès!\n\n" +
+                    "Fichier: " + fileToSave.getName() + "\n" +
+                    "Lignes: " + myList.size(),
+                    "Sauvegarde réussie",
+                    JOptionPane.INFORMATION_MESSAGE);
+                    
+            } catch (IOException ex) {
+                addToLog("✗ Erreur lors de la sauvegarde: " + ex.getMessage());
+                JOptionPane.showMessageDialog(mainFrame,
+                    "Erreur lors de la sauvegarde:\n" + ex.getMessage(),
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    // **NEW METHOD: Stop current execution**
+    private static void stopCurrentExecution() {
+        if (isExecuting) {
+            stopExecution = true;
+            stopButton.setEnabled(false);
+            addToLog("⚠ Arrêt de l'exécution demandé...");
+            
+            statusLabel.setText("⏹ Exécution arrêtée par l'utilisateur");
+            statusLabel.setForeground(new Color(180, 0, 0));
+            stateInfoLabel.setText("Arrêt brutal à la ligne courante");
+            
+            JOptionPane.showMessageDialog(mainFrame,
+                "L'exécution sera arrêtée dès que possible.\n" +
+                "Veuillez patienter...",
+                "Arrêt en cours",
+                JOptionPane.WARNING_MESSAGE);
+        }
     }
     
     private static void openNewCodeEditor() {
@@ -689,11 +778,12 @@ public class main {
                 editorFrame.dispose();
                 addToLog("New code loaded: " + myList.size() + " instructions");
                 JOptionPane.showMessageDialog(mainFrame, 
-                    "Code loaded successfully!\n\n" + 
-                    "Instructions: " + myList.size() + " lines\n" +
-                    "Use 'Run' to execute all at once\n" +
-                    "Use 'Step' for line-by-line debugging",
-                    "Code Loaded", 
+                    "✓ Code chargé avec succès!\n\n" + 
+                    "Instructions: " + myList.size() + " lignes\n\n" +
+                    "• Utilisez 'Run' pour exécuter tout d'un coup\n" +
+                    "• Utilisez 'Step' pour déboguer ligne par ligne\n" +
+                    "• Utilisez 'Save' pour sauvegarder le code",
+                    "Code chargé", 
                     JOptionPane.INFORMATION_MESSAGE);
             }
         });
@@ -738,25 +828,62 @@ public class main {
     }
     
     private static boolean loadCodeFromText(String code) {
+        // **VALIDATION PHASE 1: Check for empty code**
+        if (code == null || code.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(mainFrame,
+                "❌ Le code est vide!\n\nVeuillez entrer au moins une instruction.",
+                "Erreur - Code vide",
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        
         // Reset everything for new code
         fullSystemReset();
         
         myList.clear();
         String[] lines = code.split("\n");
         boolean hasValidCode = false;
+        StringBuilder validationErrors = new StringBuilder();
+        int lineNumber = 0;
+        
+        // Store original code for saving
+        currentLoadedCode = code;
         
         for (String line : lines) {
+            lineNumber++;
             line = line.trim();
+            
+            // Skip empty lines and comments
             if (line.isEmpty() || line.startsWith(";")) {
                 continue;
             }
             
+            // Remove inline comments
             if (line.contains(";")) {
                 line = line.substring(0, line.indexOf(";")).trim();
             }
             
+            // Skip if line became empty after comment removal
+            if (line.isEmpty()) {
+                continue;
+            }
+            
             String[] words = line.split("\\s+");
             ArrayList<String> lineWords = new ArrayList<>();
+            
+            // **VALIDATION PHASE 2: Validate instruction**
+            if (words.length >= 1) {
+                String instruction = words[0];
+                String operand = (words.length > 1) ? words[1] : "";
+                
+                // Validate instruction using InstructionValidator
+                String error = InstructionValidator.validateInstruction(instruction, operand);
+                if (error != null) {
+                    validationErrors.append("📍 Ligne ").append(lineNumber).append(": ")
+                                   .append(line).append("\n")
+                                   .append(error).append("\n\n");
+                }
+            }
             
             for (String word : words) {
                 if (!word.isEmpty()) {
@@ -770,10 +897,33 @@ public class main {
             }
         }
         
+        // **VALIDATION PHASE 3: Show all errors**
+        if (validationErrors.length() > 0) {
+            JTextArea errorArea = new JTextArea(validationErrors.toString());
+            errorArea.setEditable(false);
+            errorArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            errorArea.setBackground(new Color(255, 240, 240));
+            
+            JScrollPane scrollPane = new JScrollPane(errorArea);
+            scrollPane.setPreferredSize(new Dimension(600, 300));
+            
+            JOptionPane.showMessageDialog(mainFrame,
+                scrollPane,
+                "❌ Erreurs de validation détectées",
+                JOptionPane.ERROR_MESSAGE);
+            
+            addToLog("✗ Validation failed: " + validationErrors.toString().split("\n").length/3 + " error(s)");
+            
+            // Reset and return false
+            myList.clear();
+            currentLoadedCode = "";
+            return false;
+        }
+        
         // Check for END instruction
         boolean hasEnd = false;
-        for (ArrayList<String> line : myList) {
-            if (!line.isEmpty() && line.get(0).equals("END")) {
+        for (ArrayList<String> currentLine : myList) {
+            if (!currentLine.isEmpty() && currentLine.get(0).equals("END")) {
                 hasEnd = true;
                 break;
             }
@@ -789,19 +939,20 @@ public class main {
             stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
             hasLoadedCode = true;
             
-            statusLabel.setText("Code loaded - " + myList.size() + " instructions ready");
+            statusLabel.setText("✓ Code chargé - " + myList.size() + " instructions prêtes");
             statusLabel.setForeground(new Color(0, 100, 0));
-            stateInfoLabel.setText(myList.size() + " instructions loaded - Ready to execute");
+            stateInfoLabel.setText(myList.size() + " instructions validées - Prêt à exécuter");
             
             runButton.setEnabled(true);
             stepButton.setEnabled(true);
             resetButton.setEnabled(true);
+            saveButton.setEnabled(true);  // Enable save after successful load
             
             return true;
         } else {
             JOptionPane.showMessageDialog(mainFrame, 
-                "No valid code found! Please enter assembly instructions.",
-                "No Code", 
+                "❌ Aucun code valide trouvé!\n\nVeuillez entrer des instructions d'assemblage.",
+                "Erreur - Pas de code",
                 JOptionPane.WARNING_MESSAGE);
             return false;
         }
@@ -810,8 +961,8 @@ public class main {
     private static void executeFullProgram() {
         if (!hasLoadedCode || stepExecutor == null) {
             JOptionPane.showMessageDialog(mainFrame, 
-                "No code loaded! Click 'New' to write code first.",
-                "No Code", 
+                "Pas de code chargé! Cliquez sur 'New' pour écrire du code d'abord.",
+                "Pas de code", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -820,6 +971,16 @@ public class main {
         if (stepFrame != null && stepFrame.isVisible()) {
             stepFrame.dispose();
         }
+        
+        // Reset stop flag
+        stopExecution = false;
+        isExecuting = true;
+        
+        // Enable stop button, disable others
+        stopButton.setEnabled(true);
+        runButton.setEnabled(false);
+        stepButton.setEnabled(false);
+        newButton.setEnabled(false);
         
         // Reset to initial state
         resetToInitialState();
@@ -831,34 +992,103 @@ public class main {
         addToLog("EXECUTING FULL PROGRAM");
         addToLog("========================================");
         
-        // Execute all steps
-        stepExecutor.executeGUIAllSteps();
-        
-        int totalSteps = stepExecutor.getTotalSteps();
-        statusLabel.setText("✓ All " + totalSteps + " instructions executed");
-        statusLabel.setForeground(new Color(0, 150, 0));
-        stateInfoLabel.setText("Execution complete - View RAM/ROM/Registers for results");
-        progressLabel.setText("Program executed successfully");
-        
-        addToLog("All " + totalSteps + " instructions executed successfully");
-        addToLog("========================================");
-        
-        // Update all open viewers
-        updateAllDisplays();
-        
-        JOptionPane.showMessageDialog(mainFrame, 
-            "Execution complete!\n\n" +
-            "Executed: " + totalSteps + " instructions\n" +
-            "Check RAM, ROM and Register displays for results",
-            "Execution Finished", 
-            JOptionPane.INFORMATION_MESSAGE);
+        // Execute in a separate thread to allow Stop button to work
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    // Execute all steps with stop checking
+                    int totalSteps = stepExecutor.getTotalSteps();
+                    for (int i = 0; i < totalSteps; i++) {
+                        // Check if stop was requested
+                        if (stopExecution) {
+                            final int stoppedLine = i + 1;
+                            final int total = totalSteps;
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    statusLabel.setText("⏹ Exécution arrêtée à la ligne " + stoppedLine + "/" + total);
+                                    statusLabel.setForeground(new Color(180, 0, 0));
+                                    stateInfoLabel.setText("Arrêt brutal demandé par l'utilisateur");
+                                    addToLog("⚠ Execution stopped at line " + stoppedLine);
+                                }
+                            });
+                            break;
+                        }
+                        
+                        stepExecutor.executeGUISingleStep();
+                        
+                        // Update UI periodically
+                        final int currentLine = i + 1;
+                        final int total = totalSteps;
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                progressLabel.setText("Exécution: ligne " + currentLine + "/" + total);
+                            }
+                        });
+                        
+                        // Small delay to allow UI updates and stop button to work
+                        Thread.sleep(10);
+                    }
+                    
+                    // Execution complete (or stopped)
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            isExecuting = false;
+                            stopButton.setEnabled(false);
+                            runButton.setEnabled(true);
+                            stepButton.setEnabled(true);
+                            newButton.setEnabled(true);
+                            
+                            if (!stopExecution) {
+                                int totalSteps = stepExecutor.getTotalSteps();
+                                statusLabel.setText("✓ Toutes les " + totalSteps + " instructions exécutées");
+                                statusLabel.setForeground(new Color(0, 150, 0));
+                                stateInfoLabel.setText("Exécution terminée - Voir RAM/ROM/Registres pour les résultats");
+                                progressLabel.setText("Programme exécuté avec succès");
+                                
+                                addToLog("✓ All " + totalSteps + " instructions executed successfully");
+                                addToLog("========================================");
+                                
+                                JOptionPane.showMessageDialog(mainFrame, 
+                                    "✓ Exécution terminée!\n\n" +
+                                    "Exécuté: " + totalSteps + " instructions\n" +
+                                    "Consultez les affichages RAM, ROM et Registres pour les résultats",
+                                    "Exécution terminée", 
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            }
+                            
+                            // Update all open viewers
+                            updateAllDisplays();
+                        }
+                    });
+                    
+                } catch (Exception e) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            isExecuting = false;
+                            stopButton.setEnabled(false);
+                            runButton.setEnabled(true);
+                            stepButton.setEnabled(true);
+                            newButton.setEnabled(true);
+                            
+                            String errorMsg = "Erreur pendant l'exécution:\n" + e.getMessage();
+                            addToLog("✗ EXECUTION ERROR: " + e.getMessage());
+                            JOptionPane.showMessageDialog(mainFrame,
+                                errorMsg,
+                                "Erreur d'exécution",
+                                JOptionPane.ERROR_MESSAGE);
+                            e.printStackTrace();
+                        }
+                    });
+                }
+            }
+        }).start();
     }
     
     private static void openStepDebugger() {
         if (!hasLoadedCode || stepExecutor == null) {
             JOptionPane.showMessageDialog(mainFrame, 
-                "No code loaded! Click 'New' to write code first.",
-                "No Code", 
+                "Pas de code chargé! Cliquez sur 'New' pour écrire du code d'abord.",
+                "Pas de code", 
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -885,8 +1115,8 @@ public class main {
     
     private static void resetSimulator() {
         int confirm = JOptionPane.showConfirmDialog(mainFrame,
-            "Reset all memory and registers to zero?\nCurrent program will be kept.",
-            "Reset Simulator",
+            "Réinitialiser toute la mémoire et les registres à zéro?\nLe programme actuel sera conservé.",
+            "Réinitialiser le simulateur",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         
@@ -897,18 +1127,18 @@ public class main {
                 stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
             }
             
-            statusLabel.setText("Simulator reset - Memory cleared");
-            stateInfoLabel.setText("All registers and memory set to zero");
+            statusLabel.setText("Simulateur réinitialisé - Mémoire effacée");
+            stateInfoLabel.setText("Tous les registres et la mémoire sont à zéro");
             progressLabel.setText("");
             
             updateAllDisplays();
             addToLog("Simulator reset to initial state");
             
             JOptionPane.showMessageDialog(mainFrame, 
-                "Simulator reset complete!\n\n" +
-                "All memory and registers cleared.\n" +
-                "Program still loaded and ready to execute.",
-                "Reset Complete", 
+                "✓ Réinitialisation terminée!\n\n" +
+                "Toute la mémoire et les registres ont été effacés.\n" +
+                "Le programme est toujours chargé et prêt à être exécuté.",
+                "Réinitialisation terminée", 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }
@@ -932,6 +1162,7 @@ public class main {
         
         hasLoadedCode = false;
         isExecuting = false;
+        stopExecution = false;
     }
     
     private static void resetToInitialState() {
