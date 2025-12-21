@@ -25,7 +25,6 @@ public class pas {
         resetMemory();
     }
 
-    // Update RAM display
     public void updateDisplayRAM(String value, int address) {
         if (value.length() == 4) {
             // 16-bit value
@@ -81,10 +80,9 @@ public class pas {
         }
     }
 
-    // Smart RAM update
     private void updateRAMWithInstruction(String instruction, String opcode, String operand) {
         if (instruction.equals("END")) {
-            ram.getram().put("0000", opcode); // "3F"
+            ram.getram().put("0000", opcode);
             return;
         }
         
@@ -179,14 +177,11 @@ public class pas {
         }
         System.out.println();
 
-        // Show registers
         reg.displayRegisters();
 
-        // Show RAM
         System.out.println("\n=== CURRENT RAM ===");
         ram.displayRange("0000", "000F");
 
-        // Show ROM
         System.out.println("\n=== CURRENT ROM (EXECUTED INSTRUCTIONS) ===");
         rom.displayRange("0000", reg.getPC());
 
@@ -258,6 +253,7 @@ public class pas {
         reg.setS("0000");
         reg.setU("0000");
         reg.setCCR("00");
+        reg.setPC(0);
         resetMemory();
     }
 
@@ -358,22 +354,12 @@ public class pas {
         // Restore ROM
         Map<String, String> romMemory = rom.getMemory();
         romMemory.clear();
-        
-        // Fill all with 00
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i);
-            romMemory.put(addr, "00");
-        }
-        
-        // Restore saved values
-        for (Map.Entry<String, String> entry : previousState.romState.entrySet()) {
-            romMemory.put(entry.getKey(), entry.getValue());
-        }
+        romMemory.putAll(previousState.romState);
         
         // Restore ROM write pointer
         rom.setWritePointer(previousState.romWritePointer);
         
-        // Restore registers
+        // Restore registers - INCLUDING PC!
         reg.setA(previousState.registerState.get("A"));
         reg.setB(previousState.registerState.get("B"));
         reg.setD(previousState.registerState.get("D"));
@@ -383,11 +369,19 @@ public class pas {
         reg.setU(previousState.registerState.get("U"));
         reg.setCCR(previousState.registerState.get("CCR"));
         
+        // CRITICAL FIX: Restore PC properly
+        String pcValue = previousState.registerState.get("PC");
+        try {
+            int pcInt = Integer.parseInt(pcValue, 16);
+            reg.setPC(pcInt);
+        } catch (Exception e) {
+            reg.setPC(0);
+        }
         
         // Restore current step
         currentStep = previousState.currentStep;
         
-        System.out.println("[GUI] Went back to step " + currentStep);
+        System.out.println("[GUI] Went back to step " + currentStep + " (PC=" + reg.getPC() + ")");
         return true;
     }
 
@@ -404,22 +398,12 @@ public class pas {
         // Restore ROM
         Map<String, String> romMemory = rom.getMemory();
         romMemory.clear();
-        
-        // Fill all with 00
-        for (int i = 0; i < 65536; i++) {
-            String addr = String.format("%04X", i);
-            romMemory.put(addr, "00");
-        }
-        
-        // Restore saved values
-        for (Map.Entry<String, String> entry : nextState.romState.entrySet()) {
-            romMemory.put(entry.getKey(), entry.getValue());
-        }
+        romMemory.putAll(nextState.romState);
         
         // Restore ROM write pointer
         rom.setWritePointer(nextState.romWritePointer);
         
-        // Restore registers
+        // Restore registers - INCLUDING PC!
         reg.setA(nextState.registerState.get("A"));
         reg.setB(nextState.registerState.get("B"));
         reg.setD(nextState.registerState.get("D"));
@@ -429,11 +413,19 @@ public class pas {
         reg.setU(nextState.registerState.get("U"));
         reg.setCCR(nextState.registerState.get("CCR"));
         
+        // CRITICAL FIX: Restore PC properly
+        String pcValue = nextState.registerState.get("PC");
+        try {
+            int pcInt = Integer.parseInt(pcValue, 16);
+            reg.setPC(pcInt);
+        } catch (Exception e) {
+            reg.setPC(0);
+        }
         
         // Restore current step
         currentStep = nextState.currentStep;
         
-        System.out.println("[GUI] Went forward to step " + currentStep);
+        System.out.println("[GUI] Went forward to step " + currentStep + " (PC=" + reg.getPC() + ")");
         return true;
     }
 

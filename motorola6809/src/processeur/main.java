@@ -502,7 +502,8 @@ public class main {
     // GUI frames
     private static RAMDisplayFrame ramFrame;
     private static ROMDisplayFrame romFrame;
-    private static RegisterDisplayFrame registerFrame;
+    private static EnhancedRegisterDisplayFrame registerFrame;
+    private static StepExecutionFrame stepFrame;
     
     // GUI components
     private static JLabel statusLabel;
@@ -511,14 +512,25 @@ public class main {
     private static JLabel stateInfoLabel;
     private static JLabel progressLabel;
     
-    // Buttons that need state management
+    // Buttons
     private static JButton stepButton;
     private static JButton runButton;
-    private static JButton backButton;
-    private static JButton forwardButton;
+    private static JButton newButton;
+    private static JButton resetButton;
+    
+    // State flags
+    private static boolean hasLoadedCode = false;
+    private static boolean isExecuting = false;
     
     public static void main(String[] args) {
         // Initialize backend
+        initializeBackend();
+        
+        // Create GUI
+        SwingUtilities.invokeLater(() -> createMainWindow());
+    }
+    
+    private static void initializeBackend() {
         rom = new ROM();
         ram = new ram();
         reg = new registre();
@@ -527,20 +539,16 @@ public class main {
         modeDetector.setRegistre(reg);
         modeDetector.setRam(ram);
         
-        // Initialize assembly list
         myList = new ArrayList<>();
-        
-        // Create GUI
-        SwingUtilities.invokeLater(() -> createMainWindow());
     }
     
     private static void createMainWindow() {
         mainFrame = new JFrame("Motorola 6809 Simulator");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.setSize(1200, 200);
+        mainFrame.setSize(1200, 250);
         mainFrame.setLayout(new BorderLayout());
         
-        // Set logo if available
+        // Set logo
         try {
             ImageIcon logo = new ImageIcon("logoprincipale.png");
             mainFrame.setIconImage(logo.getImage());
@@ -563,28 +571,25 @@ public class main {
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         
-        stateInfoLabel = new JLabel("State: --/-- | Position: Initial", SwingConstants.CENTER);
+        stateInfoLabel = new JLabel("No code loaded", SwingConstants.CENTER);
         stateInfoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         stateInfoLabel.setForeground(Color.DARK_GRAY);
-        stateInfoLabel.setBorder(BorderFactory.createEmptyBorder(2, 10, 2, 10));
         
-        progressLabel = new JLabel("Execution: 0/0 steps | Can go back: No | Can go forward: No", SwingConstants.CENTER);
+        progressLabel = new JLabel("", SwingConstants.CENTER);
         progressLabel.setFont(new Font("Arial", Font.PLAIN, 11));
         progressLabel.setForeground(Color.GRAY);
-        progressLabel.setBorder(BorderFactory.createEmptyBorder(2, 10, 5, 10));
         
         statusPanel.add(statusLabel);
         statusPanel.add(stateInfoLabel);
         statusPanel.add(progressLabel);
         
         // Execution log
-        executionLog = new JTextArea(3, 50);
+        executionLog = new JTextArea(4, 50);
         executionLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
         executionLog.setEditable(false);
         executionLog.setBackground(new Color(240, 240, 240));
         executionLog.setBorder(BorderFactory.createTitledBorder("Execution Log"));
         JScrollPane logScroll = new JScrollPane(executionLog);
-        logScroll.setPreferredSize(new Dimension(1150, 80));
         
         mainPanel.add(statusPanel, BorderLayout.NORTH);
         mainPanel.add(logScroll, BorderLayout.CENTER);
@@ -600,8 +605,8 @@ public class main {
         ramFrame = new RAMDisplayFrame(ram);
         romFrame = new ROMDisplayFrame(rom);
         
-        ramFrame.setLocation(50, 230);
-        romFrame.setLocation(500, 230);
+        ramFrame.setLocation(50, 280);
+        romFrame.setLocation(500, 280);
     }
     
     private static JToolBar createToolBar() {
@@ -610,105 +615,65 @@ public class main {
         toolBar.setBackground(new Color(230, 230, 230));
         toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
         
-        String[] buttonData = {"New", "Run", "Step", "Back", "Forward", "Reset", "RAM", "ROM", "Registers"};
+        // New button
+        newButton = createToolbarButton("New", new Color(0, 120, 215));
+        newButton.addActionListener(e -> openNewCodeEditor());
         
-        for (String text : buttonData) {
-            JButton button = new JButton(text);
-            button.setFocusable(false);
-            button.setMargin(new Insets(5, 12, 5, 12));
-            
-            // Style buttons
-            if (text.equals("Run")) {
-                button.setBackground(new Color(0, 150, 0));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Arial", Font.BOLD, 12));
-                runButton = button;
-            } else if (text.equals("Step")) {
-                button.setBackground(new Color(0, 100, 200));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Arial", Font.BOLD, 12));
-                stepButton = button;
-            } else if (text.equals("Back")) {
-                button.setBackground(new Color(200, 100, 0));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Arial", Font.BOLD, 12));
-                button.setEnabled(false);
-                backButton = button;
-            } else if (text.equals("Forward")) {
-                button.setBackground(new Color(150, 0, 200));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Arial", Font.BOLD, 12));
-                button.setEnabled(false);
-                forwardButton = button;
-            } else if (text.equals("Reset")) {
-                button.setBackground(new Color(200, 0, 0));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Arial", Font.BOLD, 12));
-            }
-            
-            // Add functionality
-            if (text.equals("RAM")) {
-                button.addActionListener(e -> showRAMFrame());
-            } else if (text.equals("ROM")) {
-                button.addActionListener(e -> showROMFrame());
-            } else if (text.equals("Registers")) {
-                button.addActionListener(e -> showRegisterFrame());
-            } else if (text.equals("New")) {
-                button.addActionListener(e -> openCodeEditor());
-            } else if (text.equals("Run")) {
-                button.addActionListener(e -> executeAllInGUI());
-            } else if (text.equals("Step")) {
-                button.addActionListener(e -> executeSingleStepInGUI());
-            } else if (text.equals("Back")) {
-                button.addActionListener(e -> goBackOneStep());
-            } else if (text.equals("Forward")) {
-                button.addActionListener(e -> goForwardOneStep());
-            } else if (text.equals("Reset")) {
-                button.addActionListener(e -> resetExecution());
-            }
-            
-            toolBar.add(button);
-            toolBar.addSeparator();
-        }
+        // Run button
+        runButton = createToolbarButton("Run", new Color(0, 150, 0));
+        runButton.setEnabled(false);
+        runButton.addActionListener(e -> executeFullProgram());
         
+        // Step button
+        stepButton = createToolbarButton("Step", new Color(0, 100, 200));
+        stepButton.setEnabled(false);
+        stepButton.addActionListener(e -> openStepDebugger());
+        
+        // Reset button
+        resetButton = createToolbarButton("Reset", new Color(200, 0, 0));
+        resetButton.setEnabled(false);
+        resetButton.addActionListener(e -> resetSimulator());
+        
+        // View buttons
+        JButton ramButton = createToolbarButton("RAM", new Color(100, 100, 100));
+        ramButton.addActionListener(e -> showRAMFrame());
+        
+        JButton romButton = createToolbarButton("ROM", new Color(100, 100, 100));
+        romButton.addActionListener(e -> showROMFrame());
+        
+        JButton regButton = createToolbarButton("Registers", new Color(100, 100, 100));
+        regButton.addActionListener(e -> showRegisterFrame());
+        
+        toolBar.add(newButton);
+        toolBar.addSeparator();
+        toolBar.add(runButton);
+        toolBar.add(stepButton);
+        toolBar.addSeparator();
+        toolBar.add(resetButton);
+        toolBar.addSeparator();
+        toolBar.add(ramButton);
+        toolBar.add(romButton);
+        toolBar.add(regButton);
         toolBar.add(Box.createHorizontalGlue());
+        
         return toolBar;
     }
     
-    private static void showRAMFrame() {
-        if (ramFrame != null) {
-            ramFrame.updateRAMDisplay();
-            ramFrame.setVisible(true);
-            ramFrame.toFront();
-            addToLog("RAM Viewer opened");
-        }
+    private static JButton createToolbarButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setFocusPainted(false);
+        button.setMargin(new Insets(5, 15, 5, 15));
+        return button;
     }
     
-    private static void showROMFrame() {
-        if (romFrame != null) {
-            romFrame.updateROMDisplay();
-            romFrame.setVisible(true);
-            romFrame.toFront();
-            addToLog("ROM Viewer opened");
-        }
-    }
-    
-    private static void showRegisterFrame() {
-        if (registerFrame != null) {
-            registerFrame.dispose(); // Close old one
-        }
-        registerFrame = new RegisterDisplayFrame(reg);
-        registerFrame.setLocation(950, 230);
-        registerFrame.updateRegisterDisplay();
-        registerFrame.setVisible(true);
-        addToLog("Register Viewer opened");
-    }
-    
-    private static void openCodeEditor() {
+    private static void openNewCodeEditor() {
         JFrame editorFrame = new JFrame("Assembly Code Editor");
         editorFrame.setSize(700, 500);
         editorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        editorFrame.setLocationRelativeTo(null);
+        editorFrame.setLocationRelativeTo(mainFrame);
         
         JPanel mainPanel = new JPanel(new BorderLayout());
         JTextArea textArea = createTextArea();
@@ -722,15 +687,14 @@ public class main {
             String code = textArea.getText();
             if (loadCodeFromText(code)) {
                 editorFrame.dispose();
-                addToLog("Code loaded: " + myList.size() + " instructions");
+                addToLog("New code loaded: " + myList.size() + " instructions");
                 JOptionPane.showMessageDialog(mainFrame, 
                     "Code loaded successfully!\n\n" + 
                     "Instructions: " + myList.size() + " lines\n" +
-                    "Use Step/Run to execute\n" +
-                    "Use Back/Forward to navigate history",
+                    "Use 'Run' to execute all at once\n" +
+                    "Use 'Step' for line-by-line debugging",
                     "Code Loaded", 
                     JOptionPane.INFORMATION_MESSAGE);
-                updateButtonStates();
             }
         });
         
@@ -742,7 +706,10 @@ public class main {
         buttonPanel.add(Box.createHorizontalStrut(20));
         buttonPanel.add(cancelButton);
         
-        mainPanel.add(new JLabel("Enter Motorola 6809 Assembly Code (end with END):"), BorderLayout.NORTH);
+        JLabel instructionLabel = new JLabel("Enter Motorola 6809 Assembly Code (end with END):");
+        instructionLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        mainPanel.add(instructionLabel, BorderLayout.NORTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -771,6 +738,9 @@ public class main {
     }
     
     private static boolean loadCodeFromText(String code) {
+        // Reset everything for new code
+        fullSystemReset();
+        
         myList.clear();
         String[] lines = code.split("\n");
         boolean hasValidCode = false;
@@ -817,10 +787,16 @@ public class main {
         
         if (hasValidCode) {
             stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
-            statusLabel.setText("Code loaded - " + myList.size() + " instructions ready to execute");
+            hasLoadedCode = true;
+            
+            statusLabel.setText("Code loaded - " + myList.size() + " instructions ready");
             statusLabel.setForeground(new Color(0, 100, 0));
-            updateStateInfo();
-            updateButtonStates();
+            stateInfoLabel.setText(myList.size() + " instructions loaded - Ready to execute");
+            
+            runButton.setEnabled(true);
+            stepButton.setEnabled(true);
+            resetButton.setEnabled(true);
+            
             return true;
         } else {
             JOptionPane.showMessageDialog(mainFrame, 
@@ -831,8 +807,8 @@ public class main {
         }
     }
     
-    private static void executeSingleStepInGUI() {
-        if (stepExecutor == null) {
+    private static void executeFullProgram() {
+        if (!hasLoadedCode || stepExecutor == null) {
             JOptionPane.showMessageDialog(mainFrame, 
                 "No code loaded! Click 'New' to write code first.",
                 "No Code", 
@@ -840,48 +816,46 @@ public class main {
             return;
         }
         
-        if (stepExecutor.getCurrentStepNumber() >= stepExecutor.getTotalSteps()) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Execution already complete! Use Back button to review.",
-                "Execution Complete", 
-                JOptionPane.INFORMATION_MESSAGE);
-            return;
+        // Close step frame if open
+        if (stepFrame != null && stepFrame.isVisible()) {
+            stepFrame.dispose();
         }
         
-        boolean hasMoreSteps = stepExecutor.executeGUISingleStep();
-        ArrayList<String> executedLine = stepExecutor.getCurrentLineForDisplay();
-        int stepNum = stepExecutor.getCurrentStepNumber();
+        // Reset to initial state
+        resetToInitialState();
+        
+        // Recreate executor
+        stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
+        
+        addToLog("========================================");
+        addToLog("EXECUTING FULL PROGRAM");
+        addToLog("========================================");
+        
+        // Execute all steps
+        stepExecutor.executeGUIAllSteps();
+        
         int totalSteps = stepExecutor.getTotalSteps();
+        statusLabel.setText("✓ All " + totalSteps + " instructions executed");
+        statusLabel.setForeground(new Color(0, 150, 0));
+        stateInfoLabel.setText("Execution complete - View RAM/ROM/Registers for results");
+        progressLabel.setText("Program executed successfully");
         
-        if (!executedLine.isEmpty()) {
-            StringBuilder lineText = new StringBuilder();
-            for (String word : executedLine) {
-                lineText.append(word).append(" ");
-            }
-            
-            String progress = String.format("Step %d/%d: %s", stepNum, totalSteps, lineText.toString());
-            statusLabel.setText(progress);
-            
-            addToLog("Step " + stepNum + ": " + lineText.toString());
-        }
+        addToLog("All " + totalSteps + " instructions executed successfully");
+        addToLog("========================================");
         
+        // Update all open viewers
         updateAllDisplays();
-        updateStateInfo();
-        updateButtonStates();
         
-        if (!hasMoreSteps) {
-            addToLog("Execution complete!");
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Execution complete! All " + totalSteps + " instructions executed.",
-                "Execution Finished", 
-                JOptionPane.INFORMATION_MESSAGE);
-            statusLabel.setText("Execution complete - " + totalSteps + " instructions executed");
-            statusLabel.setForeground(new Color(0, 100, 0));
-        }
+        JOptionPane.showMessageDialog(mainFrame, 
+            "Execution complete!\n\n" +
+            "Executed: " + totalSteps + " instructions\n" +
+            "Check RAM, ROM and Register displays for results",
+            "Execution Finished", 
+            JOptionPane.INFORMATION_MESSAGE);
     }
     
-    private static void executeAllInGUI() {
-        if (stepExecutor == null) {
+    private static void openStepDebugger() {
+        if (!hasLoadedCode || stepExecutor == null) {
             JOptionPane.showMessageDialog(mainFrame, 
                 "No code loaded! Click 'New' to write code first.",
                 "No Code", 
@@ -889,145 +863,57 @@ public class main {
             return;
         }
         
-        if (stepExecutor.getCurrentStepNumber() >= stepExecutor.getTotalSteps()) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Code already executed! Use Back button to review.",
-                "Already Executed", 
-                JOptionPane.INFORMATION_MESSAGE);
-            return;
+        // Close existing step frame if open
+        if (stepFrame != null && stepFrame.isVisible()) {
+            stepFrame.dispose();
         }
         
-        int remaining = stepExecutor.getTotalSteps() - stepExecutor.getCurrentStepNumber();
+        // Reset to initial state
+        resetToInitialState();
+        
+        // Recreate executor
+        stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
+        
+        addToLog("Step-by-step debugger opened");
+        statusLabel.setText("Step debugger active");
+        
+        // Create and show step frame
+        stepFrame = new StepExecutionFrame(stepExecutor, ram, rom, reg, myList);
+        stepFrame.setLocation(100, 100);
+        stepFrame.setVisible(true);
+    }
+    
+    private static void resetSimulator() {
         int confirm = JOptionPane.showConfirmDialog(mainFrame,
-            "Execute " + remaining + " remaining instructions?",
-            "Execute All",
+            "Reset all memory and registers to zero?\nCurrent program will be kept.",
+            "Reset Simulator",
             JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE);
+            JOptionPane.WARNING_MESSAGE);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            addToLog("Executing all " + remaining + " instructions...");
-            stepExecutor.executeGUIAllSteps();
+            resetToInitialState();
             
-            int totalSteps = stepExecutor.getTotalSteps();
-            statusLabel.setText("All " + totalSteps + " instructions executed");
-            statusLabel.setForeground(new Color(0, 100, 0));
+            if (hasLoadedCode) {
+                stepExecutor = new pas(myList, ram, rom, reg, modeDetector);
+            }
             
-            addToLog("All " + totalSteps + " instructions executed");
+            statusLabel.setText("Simulator reset - Memory cleared");
+            stateInfoLabel.setText("All registers and memory set to zero");
+            progressLabel.setText("");
             
             updateAllDisplays();
-            updateStateInfo();
-            updateButtonStates();
+            addToLog("Simulator reset to initial state");
             
             JOptionPane.showMessageDialog(mainFrame, 
-                "Execution complete!\n\n" +
-                "Executed: " + totalSteps + " instructions\n" +
-                "Check RAM, ROM and Register displays",
-                "Execution Finished", 
+                "Simulator reset complete!\n\n" +
+                "All memory and registers cleared.\n" +
+                "Program still loaded and ready to execute.",
+                "Reset Complete", 
                 JOptionPane.INFORMATION_MESSAGE);
         }
     }
     
-    private static void goBackOneStep() {
-        if (stepExecutor == null) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "No execution history!",
-                "Cannot Go Back", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        if (!stepExecutor.canGoBack()) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Already at the beginning!",
-                "Cannot Go Back", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        boolean success = stepExecutor.goBackOneStep();
-        
-        if (success) {
-            addToLog("Went back one step");
-            updateAllDisplays();
-            updateStateInfo();
-            updateButtonStates();
-            
-            int currentStep = stepExecutor.getCurrentStepNumber();
-            int totalSteps = stepExecutor.getTotalSteps();
-            
-            if (currentStep > 0) {
-                ArrayList<String> line = stepExecutor.getLineAtStep(currentStep - 1);
-                StringBuilder lineText = new StringBuilder();
-                for (String word : line) {
-                    lineText.append(word).append(" ");
-                }
-                statusLabel.setText("Back to step " + currentStep + "/" + totalSteps + ": " + lineText.toString());
-            } else {
-                statusLabel.setText("Back to initial state (before execution)");
-            }
-            
-            statusLabel.setForeground(new Color(200, 100, 0));
-        } else {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Failed to go back!",
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private static void goForwardOneStep() {
-        if (stepExecutor == null) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "No execution history!",
-                "Cannot Go Forward", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        if (!stepExecutor.canGoForward()) {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Already at the latest state!",
-                "Cannot Go Forward", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        boolean success = stepExecutor.goForwardOneStep();
-        
-        if (success) {
-            addToLog("Went forward one step");
-            updateAllDisplays();
-            updateStateInfo();
-            updateButtonStates();
-            
-            int currentStep = stepExecutor.getCurrentStepNumber();
-            int totalSteps = stepExecutor.getTotalSteps();
-            
-            if (currentStep > 0) {
-                ArrayList<String> line = stepExecutor.getLineAtStep(currentStep - 1);
-                StringBuilder lineText = new StringBuilder();
-                for (String word : line) {
-                    lineText.append(word).append(" ");
-                }
-                statusLabel.setText("Forward to step " + currentStep + "/" + totalSteps + ": " + lineText.toString());
-            } else {
-                statusLabel.setText("Forward to state");
-            }
-            
-            statusLabel.setForeground(new Color(150, 0, 200));
-        } else {
-            JOptionPane.showMessageDialog(mainFrame, 
-                "Failed to go forward!",
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private static void resetExecution() {
-        if (stepExecutor != null) {
-            stepExecutor.resetGUIExecution();
-        }
-        
+    private static void fullSystemReset() {
         // Reset RAM
         for (int i = 0; i < 65536; i++) {
             String addr = String.format("%04X", i);
@@ -1036,7 +922,19 @@ public class main {
         
         // Reset ROM
         rom.resetWritePointer();
+        for (int i = 0; i < 65536; i++) {
+            String addr = String.format("%04X", i);
+            rom.getMemory().put(addr, "00");
+        }
         
+        // Reset registers
+        resetToInitialState();
+        
+        hasLoadedCode = false;
+        isExecuting = false;
+    }
+    
+    private static void resetToInitialState() {
         // Reset registers
         reg.setA("00");
         reg.setB("00");
@@ -1048,23 +946,46 @@ public class main {
         reg.setCCR("00");
         reg.setPC(0);
         
-        // Update displays
-        updateAllDisplays();
-        updateStateInfo();
-        updateButtonStates();
+        // Reset RAM
+        for (int i = 0; i < 65536; i++) {
+            String addr = String.format("%04X", i);
+            ram.getram().put(addr, "00");
+        }
         
-        // Update status
-        statusLabel.setText("Ready - Click 'New' to write assembly code");
-        statusLabel.setForeground(Color.BLACK);
-        
-        // Clear execution log
-        executionLog.setText("");
-        addToLog("System reset to initial state");
-        
-        JOptionPane.showMessageDialog(mainFrame, 
-            "Simulator reset to initial state.",
-            "Reset Complete", 
-            JOptionPane.INFORMATION_MESSAGE);
+        // Reset ROM
+        rom.resetWritePointer();
+        for (int i = 0; i < 65536; i++) {
+            String addr = String.format("%04X", i);
+            rom.getMemory().put(addr, "00");
+        }
+    }
+    
+    private static void showRAMFrame() {
+        if (ramFrame != null) {
+            ramFrame.updateRAMDisplay();
+            ramFrame.setVisible(true);
+            ramFrame.toFront();
+            addToLog("RAM Viewer opened");
+        }
+    }
+    
+    private static void showROMFrame() {
+        if (romFrame != null) {
+            romFrame.updateROMDisplay();
+            romFrame.setVisible(true);
+            romFrame.toFront();
+            addToLog("ROM Viewer opened");
+        }
+    }
+    
+    private static void showRegisterFrame() {
+        if (registerFrame != null) {
+            registerFrame.dispose();
+        }
+        registerFrame = new EnhancedRegisterDisplayFrame(reg, modeDetector);
+        registerFrame.setLocation(950, 280);
+        registerFrame.setVisible(true);
+        addToLog("Register Viewer opened");
     }
     
     private static void updateAllDisplays() {
@@ -1075,31 +996,7 @@ public class main {
             romFrame.updateROMDisplay();
         }
         if (registerFrame != null && registerFrame.isVisible()) {
-            registerFrame.updateRegisterDisplay();
-        }
-    }
-    
-    private static void updateStateInfo() {
-        if (stepExecutor != null) {
-            stateInfoLabel.setText(stepExecutor.getStateInfo());
-            int currentStep = stepExecutor.getCurrentStepNumber();
-            int totalSteps = stepExecutor.getTotalSteps();
-            progressLabel.setText("Execution: " + currentStep + "/" + totalSteps + 
-                                 " steps | Can go back: " + (stepExecutor.canGoBack() ? "Yes" : "No") +
-                                 " | Can go forward: " + (stepExecutor.canGoForward() ? "Yes" : "No"));
-        } else {
-            stateInfoLabel.setText("State: --/-- | Position: Initial");
-            progressLabel.setText("Execution: 0/0 steps | Can go back: No | Can go forward: No");
-        }
-    }
-    
-    private static void updateButtonStates() {
-        if (stepExecutor != null) {
-            backButton.setEnabled(stepExecutor.canGoBack());
-            forwardButton.setEnabled(stepExecutor.canGoForward());
-        } else {
-            backButton.setEnabled(false);
-            forwardButton.setEnabled(false);
+            ((EnhancedRegisterDisplayFrame)registerFrame).updateRegisterDisplay();
         }
     }
     
