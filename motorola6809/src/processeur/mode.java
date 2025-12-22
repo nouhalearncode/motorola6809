@@ -6169,8 +6169,7 @@ public class mode {
                 String[] parts = innerResult.split(":");
                 // AUTO_INC:REG:VAL
                 if (parts[2].equals("1")) {
-                    System.out
-                            .println("Error: Indirect Auto-Increment by 1 ([,R+]) is not allowed. Use [,R++] instead.");
+                    System.out.println("Error: Indirect Auto-Increment by 1 ([,R+]) is not allowed. Use [,R++] instead.");
                     return "UNKNOWN:INVALID:0";
                 }
             }
