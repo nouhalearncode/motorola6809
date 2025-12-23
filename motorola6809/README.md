@@ -54,7 +54,7 @@ We have implemented the most complex addressing modes of the 6809:
 #### Installation
 Clone the repository:
 ```bash
-git clone https://github.com/your-username/motorola6809-simulator.git
+git clone https://github.com/nouhalearncode/motorola6809
 cd motorola6809
 ```
 
@@ -122,7 +122,7 @@ Nous avons implémenté les modes d'adressage les plus complexes du 6809 :
 #### Installation
 Clonez le dépôt :
 ```bash
-git clone https://github.com/votre-username/motorola6809-simulator.git
+git clone https://github.com/nouhalearncode/motorola6809
 cd motorola6809
 ```
 
