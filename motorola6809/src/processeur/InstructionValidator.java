@@ -10,18 +10,18 @@ import java.util.Map;
  * Vérifie la syntaxe, les modes d'adressage et la validité des instructions
  */
 public class InstructionValidator {
-    
+
     // All supported instructions in the Motorola 6809
     private static final Set<String> VALID_INSTRUCTIONS = new HashSet<>();
-    
+
     // Map of instructions to their supported addressing modes
     private static final Map<String, Set<String>> INSTRUCTION_MODES = new HashMap<>();
-    
+
     static {
         initializeInstructions();
         initializeSupportedModes();
     }
-    
+
     private static void initializeInstructions() {
         // Load/Store instructions
         VALID_INSTRUCTIONS.add("LDA");
@@ -33,7 +33,7 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("LDY");
         VALID_INSTRUCTIONS.add("LDS");
         VALID_INSTRUCTIONS.add("LDU");
-        
+
         VALID_INSTRUCTIONS.add("STA");
         VALID_INSTRUCTIONS.add("STAA");
         VALID_INSTRUCTIONS.add("STB");
@@ -43,20 +43,20 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("STY");
         VALID_INSTRUCTIONS.add("STS");
         VALID_INSTRUCTIONS.add("STU");
-        
+
         // Arithmetic instructions
         VALID_INSTRUCTIONS.add("ADDA");
         VALID_INSTRUCTIONS.add("ADDB");
         VALID_INSTRUCTIONS.add("ADDD");
         VALID_INSTRUCTIONS.add("ADCA");
         VALID_INSTRUCTIONS.add("ADCB");
-        
+
         VALID_INSTRUCTIONS.add("SUBA");
         VALID_INSTRUCTIONS.add("SUBB");
         VALID_INSTRUCTIONS.add("SUBD");
         VALID_INSTRUCTIONS.add("SBCA");
         VALID_INSTRUCTIONS.add("SBCB");
-        
+
         // Logical instructions
         VALID_INSTRUCTIONS.add("ANDA");
         VALID_INSTRUCTIONS.add("ANDB");
@@ -66,7 +66,7 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("ORCC");
         VALID_INSTRUCTIONS.add("EORA");
         VALID_INSTRUCTIONS.add("EORB");
-        
+
         // Compare instructions
         VALID_INSTRUCTIONS.add("CMPA");
         VALID_INSTRUCTIONS.add("CMPB");
@@ -75,11 +75,11 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("CMPY");
         VALID_INSTRUCTIONS.add("CMPS");
         VALID_INSTRUCTIONS.add("CMPU");
-        
+
         // Bit test instructions
         VALID_INSTRUCTIONS.add("BITA");
         VALID_INSTRUCTIONS.add("BITB");
-        
+
         // Shift/Rotate instructions
         VALID_INSTRUCTIONS.add("ASLA");
         VALID_INSTRUCTIONS.add("ASLB");
@@ -99,7 +99,7 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("RORA");
         VALID_INSTRUCTIONS.add("RORB");
         VALID_INSTRUCTIONS.add("ROR");
-        
+
         // Inc/Dec instructions
         VALID_INSTRUCTIONS.add("INCA");
         VALID_INSTRUCTIONS.add("INCB");
@@ -107,7 +107,7 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("DECA");
         VALID_INSTRUCTIONS.add("DECB");
         VALID_INSTRUCTIONS.add("DEC");
-        
+
         // Clear/Complement/Negate instructions
         VALID_INSTRUCTIONS.add("CLRA");
         VALID_INSTRUCTIONS.add("CLRB");
@@ -118,12 +118,12 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("NEGA");
         VALID_INSTRUCTIONS.add("NEGB");
         VALID_INSTRUCTIONS.add("NEG");
-        
+
         // Test instructions
         VALID_INSTRUCTIONS.add("TSTA");
         VALID_INSTRUCTIONS.add("TSTB");
         VALID_INSTRUCTIONS.add("TST");
-        
+
         // Branch instructions
         VALID_INSTRUCTIONS.add("BRA");
         VALID_INSTRUCTIONS.add("BRN");
@@ -141,29 +141,29 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("BLT");
         VALID_INSTRUCTIONS.add("BGT");
         VALID_INSTRUCTIONS.add("BLE");
-        
+
         // Jump/Subroutine instructions
         VALID_INSTRUCTIONS.add("JMP");
         VALID_INSTRUCTIONS.add("JSR");
         VALID_INSTRUCTIONS.add("RTS");
         VALID_INSTRUCTIONS.add("RTI");
-        
+
         // LEA instructions
         VALID_INSTRUCTIONS.add("LEAX");
         VALID_INSTRUCTIONS.add("LEAY");
         VALID_INSTRUCTIONS.add("LEAS");
         VALID_INSTRUCTIONS.add("LEAU");
-        
+
         // Stack instructions
         VALID_INSTRUCTIONS.add("PSHS");
         VALID_INSTRUCTIONS.add("PULS");
         VALID_INSTRUCTIONS.add("PSHU");
         VALID_INSTRUCTIONS.add("PULU");
-        
+
         // Transfer/Exchange instructions
         VALID_INSTRUCTIONS.add("TFR");
         VALID_INSTRUCTIONS.add("EXG");
-        
+
         // Special instructions
         VALID_INSTRUCTIONS.add("ABX");
         VALID_INSTRUCTIONS.add("DAA");
@@ -175,11 +175,11 @@ public class InstructionValidator {
         VALID_INSTRUCTIONS.add("SWI3");
         VALID_INSTRUCTIONS.add("SYNC");
         VALID_INSTRUCTIONS.add("CWAI");
-        
+
         // END instruction
         VALID_INSTRUCTIONS.add("END");
     }
-    
+
     private static void initializeSupportedModes() {
         // LDA - All modes except inherent
         Set<String> ldaModes = new HashSet<>();
@@ -189,7 +189,7 @@ public class InstructionValidator {
         ldaModes.add("INDEXED");
         INSTRUCTION_MODES.put("LDA", ldaModes);
         INSTRUCTION_MODES.put("LDAA", ldaModes);
-        
+
         // LDB - All modes except inherent
         Set<String> ldbModes = new HashSet<>();
         ldbModes.add("IMMEDIATE");
@@ -198,7 +198,7 @@ public class InstructionValidator {
         ldbModes.add("INDEXED");
         INSTRUCTION_MODES.put("LDB", ldbModes);
         INSTRUCTION_MODES.put("LDAB", ldbModes);
-        
+
         // LDD, LDX, LDY, LDS, LDU - Similar modes
         Set<String> ld16Modes = new HashSet<>();
         ld16Modes.add("IMMEDIATE");
@@ -210,7 +210,7 @@ public class InstructionValidator {
         INSTRUCTION_MODES.put("LDY", ld16Modes);
         INSTRUCTION_MODES.put("LDS", ld16Modes);
         INSTRUCTION_MODES.put("LDU", ld16Modes);
-        
+
         // Store instructions - No immediate
         Set<String> storeModes = new HashSet<>();
         storeModes.add("DIRECT");
@@ -225,7 +225,7 @@ public class InstructionValidator {
         INSTRUCTION_MODES.put("STY", storeModes);
         INSTRUCTION_MODES.put("STS", storeModes);
         INSTRUCTION_MODES.put("STU", storeModes);
-        
+
         // Arithmetic - All modes
         Set<String> aluModes = new HashSet<>();
         aluModes.add("IMMEDIATE");
@@ -251,7 +251,7 @@ public class InstructionValidator {
         INSTRUCTION_MODES.put("CMPY", aluModes);
         INSTRUCTION_MODES.put("BITA", aluModes);
         INSTRUCTION_MODES.put("BITB", aluModes);
-        
+
         // Inherent mode only
         Set<String> inherentOnly = new HashSet<>();
         inherentOnly.add("INHERENT");
@@ -286,7 +286,7 @@ public class InstructionValidator {
         INSTRUCTION_MODES.put("NOP", inherentOnly);
         INSTRUCTION_MODES.put("RTS", inherentOnly);
         INSTRUCTION_MODES.put("RTI", inherentOnly);
-        
+
         // LEA - Indexed only
         Set<String> leaModes = new HashSet<>();
         leaModes.add("INDEXED");
@@ -294,7 +294,7 @@ public class InstructionValidator {
         INSTRUCTION_MODES.put("LEAY", leaModes);
         INSTRUCTION_MODES.put("LEAS", leaModes);
         INSTRUCTION_MODES.put("LEAU", leaModes);
-        
+
         // JMP/JSR - Extended and Indexed
         Set<String> jmpModes = new HashSet<>();
         jmpModes.add("DIRECT");
@@ -302,12 +302,18 @@ public class InstructionValidator {
         jmpModes.add("INDEXED");
         INSTRUCTION_MODES.put("JMP", jmpModes);
         INSTRUCTION_MODES.put("JSR", jmpModes);
+        // TFR/EXG - Transfer mode
+        Set<String> transferModes = new HashSet<>();
+        transferModes.add("TRANSFER");
+        INSTRUCTION_MODES.put("TFR", transferModes);
+        INSTRUCTION_MODES.put("EXG", transferModes);
     }
-    
+
     /**
      * Main validation method
+     * 
      * @param instruction The instruction mnemonic (e.g., "LDA", "STAA")
-     * @param operand The operand (e.g., "#$FF", "$2000", ",X")
+     * @param operand     The operand (e.g., "#$FF", "$2000", ",X")
      * @return null if valid, error message string if invalid
      */
     public static String validateInstruction(String instruction, String operand) {
@@ -315,86 +321,92 @@ public class InstructionValidator {
         if (instruction.toUpperCase().equals("END")) {
             return null; // Always valid
         }
-        
+
         // 1. Check if instruction is uppercase
         if (!instruction.equals(instruction.toUpperCase())) {
             return "❌ ERREUR: L'instruction '" + instruction + "' doit être en MAJUSCULES.\n" +
-                   "➡️ Correction suggérée: '" + instruction.toUpperCase() + "'";
+                    "➡️ Correction suggérée: '" + instruction.toUpperCase() + "'";
         }
-        
+
         // 2. Check if instruction exists
         if (!VALID_INSTRUCTIONS.contains(instruction)) {
             String suggestion = findSimilarInstruction(instruction);
             if (suggestion != null) {
                 return "❌ ERREUR: Instruction inconnue '" + instruction + "'.\n" +
-                       "➡️ Vouliez-vous dire '" + suggestion + "' ?";
+                        "➡️ Vouliez-vous dire '" + suggestion + "' ?";
             }
             return "❌ ERREUR: Instruction '" + instruction + "' non supportée.\n" +
-                   "Cette instruction n'existe pas dans le Motorola 6809.";
+                    "Cette instruction n'existe pas dans le Motorola 6809.";
         }
-        
+
         // 3. Determine addressing mode
-        String mode = determineAddressingMode(operand);
-        
+        String mode = determineAddressingMode(instruction, operand);
+
         if (mode.equals("UNKNOWN")) {
             return "❌ ERREUR: Mode d'adressage invalide pour l'opérande '" + operand + "'.\n" +
-                   "Formats valides: #$XX (immédiat), $XX (direct), $XXXX (étendu), ,X (indexé)";
+                    "Formats valides: #$XX (immédiat), $XX (direct), $XXXX (étendu), ,X (indexé)";
         }
-        
+
         // 4. Check if this instruction supports this mode
         Set<String> supportedModes = INSTRUCTION_MODES.get(instruction);
         if (supportedModes == null) {
             return null; // If not in map, assume all modes are valid
         }
-        
+
         if (!supportedModes.contains(mode)) {
-            return "❌ ERREUR: L'instruction '" + instruction + "' ne supporte pas le mode " + 
-                   getModeDisplayName(mode) + ".\n" +
-                   "➡️ Modes supportés: " + formatSupportedModes(supportedModes);
+            return "❌ ERREUR: L'instruction '" + instruction + "' ne supporte pas le mode " +
+                    getModeDisplayName(mode) + ".\n" +
+                    "➡️ Modes supportés: " + formatSupportedModes(supportedModes);
         }
-        
+
         // 5. Validate operand syntax
         String syntaxError = validateOperandSyntax(instruction, operand, mode);
         if (syntaxError != null) {
             return syntaxError;
         }
-        
+
         return null; // Valid
     }
-    
-    private static String determineAddressingMode(String operand) {
+
+    private static String determineAddressingMode(String instruction, String operand) {
         if (operand == null || operand.isEmpty()) {
             return "INHERENT";
         }
-        
+
         operand = operand.trim();
-        
+
+        if (instruction.equals("TFR") || instruction.equals("EXG")) {
+            return "TRANSFER";
+        }
+
         if (operand.startsWith("#")) {
             return "IMMEDIATE";
         }
-        
-        if (operand.contains(",")) {
+
+        if (operand.contains(",") || (operand.startsWith("[") && operand.endsWith("]"))) {
             return "INDEXED";
         }
-        
+
         if (operand.startsWith("<") || (operand.startsWith("$") && operand.length() <= 3)) {
             return "DIRECT";
         }
-        
+
         if (operand.startsWith(">") || (operand.startsWith("$") && operand.length() > 3)) {
             return "EXTENDED";
         }
-        
+
         // Check for hex values
         if (operand.startsWith("$")) {
             int len = operand.substring(1).length();
-            if (len <= 2) return "DIRECT";
-            if (len <= 4) return "EXTENDED";
+            if (len <= 2)
+                return "DIRECT";
+            if (len <= 4)
+                return "EXTENDED";
         }
-        
+
         return "UNKNOWN";
     }
-    
+
     private static String validateOperandSyntax(String instruction, String operand, String mode) {
         if (mode.equals("INHERENT")) {
             if (!operand.isEmpty()) {
@@ -402,20 +414,20 @@ public class InstructionValidator {
             }
             return null;
         }
-        
+
         if (mode.equals("IMMEDIATE")) {
             if (!operand.startsWith("#$")) {
                 return "❌ ERREUR: Le mode immédiat doit commencer par #$\n" +
-                       "➡️ Exemple: #$FF pour la valeur FF";
+                        "➡️ Exemple: #$FF pour la valeur FF";
             }
             String hexPart = operand.substring(2);
             if (!isValidHex(hexPart)) {
                 return "❌ ERREUR: Valeur hexadécimale invalide: " + operand + "\n" +
-                       "Les valeurs hexadécimales doivent contenir uniquement: 0-9, A-F";
+                        "Les valeurs hexadécimales doivent contenir uniquement: 0-9, A-F";
             }
             return null;
         }
-        
+
         if (mode.equals("DIRECT")) {
             String addr = operand.replace("<", "").replace("$", "");
             if (!isValidHex(addr)) {
@@ -423,11 +435,11 @@ public class InstructionValidator {
             }
             if (addr.length() > 2) {
                 return "❌ ERREUR: Le mode direct n'accepte que des adresses de 2 chiffres hex (00-FF).\n" +
-                       "➡️ Pour des adresses plus grandes, utilisez le mode étendu: $" + addr;
+                        "➡️ Pour des adresses plus grandes, utilisez le mode étendu: $" + addr;
             }
             return null;
         }
-        
+
         if (mode.equals("EXTENDED")) {
             String addr = operand.replace(">", "").replace("$", "");
             if (!isValidHex(addr)) {
@@ -438,38 +450,80 @@ public class InstructionValidator {
             }
             return null;
         }
-        
+
         if (mode.equals("INDEXED")) {
-            if (!operand.contains(",")) {
-                return "❌ ERREUR: Le mode indexé doit contenir une virgule.\n" +
-                       "➡️ Exemples: ,X  ou  5,Y  ou  A,X";
+            String workingOperand = operand.trim();
+
+            // Gérer les crochets d'indirection [ ... ]
+            if (workingOperand.startsWith("[") && workingOperand.endsWith("]")) {
+                workingOperand = workingOperand.substring(1, workingOperand.length() - 1).trim();
             }
-            String[] parts = operand.split(",");
+
+            // Cas spécial : Indirection étendue [ $XXXX ] sans virgule
+            if (!workingOperand.contains(",")) {
+                if (workingOperand.startsWith("$")) {
+                    String addr = workingOperand.substring(1);
+                    if (!isValidHex(addr) || addr.length() > 4) {
+                        return "❌ ERREUR: Adresse indirecte invalide: " + workingOperand;
+                    }
+                    return null;
+                }
+                return "❌ ERREUR: Le mode indexé doit contenir une virgule ou être une indirection étendue [$XXXX].\n" +
+                        "➡️ Exemples: ,X  ou  5,Y  ou  A,X  ou  [,X++]  ou  [$1000]";
+            }
+
+            String[] parts = workingOperand.split(",");
             if (parts.length != 2) {
                 return "❌ ERREUR: Syntaxe invalide pour le mode indexé: " + operand;
             }
+
             String register = parts[1].trim().toUpperCase();
-            if (!register.matches("[XYUS]|PC|PCR")) {
-                return "❌ ERREUR: Registre d'index invalide '" + register + "'.\n" +
-                       "➡️ Registres valides: X, Y, U, S, PC, PCR";
+
+            // Autorise: X, X+, X++, -X, --X, etc. (et PC/PCR)
+            if (!register.matches("^-{0,2}[XYUS]\\+{0,2}$|^PC$|^PCR$")) {
+                return "❌ ERREUR: Registre d'index ou mode auto-inc/dec invalide '" + register + "'.\n" +
+                        "➡️ Formats valides: X, Y, U, S, PC, PCR";
             }
             return null;
         }
-        
+
+        if (mode.equals("TRANSFER")) {
+            if (!operand.contains(",")) {
+                return "❌ ERREUR: L'instruction " + instruction + " nécessite deux registres séparés par une virgule.\n"
+                        +
+                        "➡️ Exemple: " + instruction + " A,B";
+            }
+            String[] regs = operand.split(",");
+            if (regs.length != 2) {
+                return "❌ ERREUR: L'instruction " + instruction + " nécessite deux registres séparés par une virgule.\n"
+                        +
+                        "➡️ Exemple: " + instruction + " A,B";
+            }
+            String r1 = regs[0].trim().toUpperCase();
+            String r2 = regs[1].trim().toUpperCase();
+
+            String validRegs = "A|B|D|X|Y|U|S|PC|CCR|DP";
+            if (!r1.matches(validRegs) || !r2.matches(validRegs)) {
+                return "❌ ERREUR: Registre(s) invalide(s) pour " + instruction + ": " + operand + "\n" +
+                        "➡️ Registres valides: A, B, D, X, Y, U, S, PC, CC, DP";
+            }
+            return null;
+        }
+
         return null;
     }
-    
+
     private static boolean isValidHex(String hex) {
         if (hex == null || hex.isEmpty()) {
             return false;
         }
         return hex.matches("[0-9A-Fa-f]+");
     }
-    
+
     private static String findSimilarInstruction(String instruction) {
         int minDistance = Integer.MAX_VALUE;
         String bestMatch = null;
-        
+
         for (String valid : VALID_INSTRUCTIONS) {
             int distance = levenshteinDistance(instruction.toUpperCase(), valid);
             if (distance < minDistance && distance <= 2) {
@@ -477,47 +531,56 @@ public class InstructionValidator {
                 bestMatch = valid;
             }
         }
-        
+
         return bestMatch;
     }
-    
+
     private static int levenshteinDistance(String a, String b) {
         int[][] dp = new int[a.length() + 1][b.length() + 1];
-        
+
         for (int i = 0; i <= a.length(); i++) {
             dp[i][0] = i;
         }
         for (int j = 0; j <= b.length(); j++) {
             dp[0][j] = j;
         }
-        
+
         for (int i = 1; i <= a.length(); i++) {
             for (int j = 1; j <= b.length(); j++) {
                 int cost = (a.charAt(i - 1) == b.charAt(j - 1)) ? 0 : 1;
-                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), 
-                                   dp[i - 1][j - 1] + cost);
+                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
+                        dp[i - 1][j - 1] + cost);
             }
         }
-        
+
         return dp[a.length()][b.length()];
     }
-    
+
     private static String getModeDisplayName(String mode) {
         switch (mode) {
-            case "IMMEDIATE": return "IMMÉDIAT";
-            case "DIRECT": return "DIRECT";
-            case "EXTENDED": return "ÉTENDU";
-            case "INDEXED": return "INDEXÉ";
-            case "INHERENT": return "INHÉRENT";
-            default: return mode;
+            case "IMMEDIATE":
+                return "IMMÉDIAT";
+            case "DIRECT":
+                return "DIRECT";
+            case "EXTENDED":
+                return "ÉTENDU";
+            case "INDEXED":
+                return "INDEXÉ";
+            case "INHERENT":
+                return "INHÉRENT";
+            case "TRANSFER":
+                return "TRANSFERT";
+            default:
+                return mode;
         }
     }
-    
+
     private static String formatSupportedModes(Set<String> modes) {
         StringBuilder sb = new StringBuilder();
-        for (String mode : modes) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(getModeDisplayName(mode));
+        for (String m : modes) {
+            if (sb.length() > 0)
+                sb.append(", ");
+            sb.append(getModeDisplayName(m));
         }
         return sb.toString();
     }
