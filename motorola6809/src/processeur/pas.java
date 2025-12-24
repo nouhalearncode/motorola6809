@@ -12,7 +12,7 @@ public class pas {
     private registre reg;
     private mode modeDetector;
     private int currentStep = 0;
-    
+
     // StateManager instance
     private StateManager stateManager = new StateManager();
 
@@ -58,12 +58,15 @@ public class pas {
             updateRAMWithInstruction(firstWord, opcode, cleanedOperand);
 
             // Update PC
-            boolean shouldSkip = modeDetector.shouldSkipPCUpdate();
-            if (!shouldSkip) {
-                int currentRomAddress = rom.getCurrentAddressInt();
-                reg.setPC(currentRomAddress);
-                modeDetector.resetSkipPCIncrementFlag();
-            }
+            // FIX: Removed manual PC update from ROM address to allow JMP/JSR to set PC
+            // correctly.
+            // boolean shouldSkip = modeDetector.shouldSkipPCUpdate();
+            // if (!shouldSkip) {
+            // int currentRomAddress = rom.getCurrentAddressInt();
+            // reg.setPC(currentRomAddress);
+            // modeDetector.resetSkipPCIncrementFlag();
+            // }
+            modeDetector.resetSkipPCIncrementFlag();
 
         } else if (currentLine.get(0).equals("END")) {
             // Store END instruction in ROM
@@ -85,11 +88,10 @@ public class pas {
             ram.getram().put("0000", opcode);
             return;
         }
-        
+
         if (operand.length() == 2) {
             ram.getram().put("0000", operand);
-        } 
-        else if (operand.length() == 4) {
+        } else if (operand.length() == 4) {
             String highByte = operand.substring(0, 2);
             String lowByte = operand.substring(2, 4);
             ram.getram().put("0000", highByte);
@@ -263,11 +265,11 @@ public class pas {
         if (currentStep >= assemblyLines.size()) {
             return false;
         }
-        
+
         saveCurrentState("Before step " + (currentStep + 1));
         executeSingleStep(currentStep);
         currentStep++;
-        
+
         System.out.println("[GUI] Executed step " + currentStep);
         return currentStep < assemblyLines.size();
     }
@@ -276,15 +278,15 @@ public class pas {
         if (currentStep >= assemblyLines.size()) {
             return;
         }
-        
+
         saveCurrentState("Before executing all from step " + (currentStep + 1));
         System.out.println("[GUI] Executing all " + (assemblyLines.size() - currentStep) + " remaining steps");
-        
+
         while (currentStep < assemblyLines.size()) {
             executeSingleStep(currentStep);
             currentStep++;
         }
-        
+
         System.out.println("[GUI] All steps executed");
     }
 
@@ -336,7 +338,7 @@ public class pas {
         registers.put("U", reg.getU());
         registers.put("CCR", reg.getCCR());
         registers.put("PC", reg.getPC());
-        
+
         int romPtr = rom.getCurrentAddressInt();
         stateManager.saveState(ram.getram(), rom.getMemory(), registers, romPtr, currentStep, description);
     }
@@ -346,19 +348,19 @@ public class pas {
         if (previousState == null) {
             return false;
         }
-        
+
         // Restore RAM
         ram.getram().clear();
         ram.getram().putAll(previousState.ramState);
-        
+
         // Restore ROM
         Map<String, String> romMemory = rom.getMemory();
         romMemory.clear();
         romMemory.putAll(previousState.romState);
-        
+
         // Restore ROM write pointer
         rom.setWritePointer(previousState.romWritePointer);
-        
+
         // Restore registers - INCLUDING PC!
         reg.setA(previousState.registerState.get("A"));
         reg.setB(previousState.registerState.get("B"));
@@ -368,7 +370,7 @@ public class pas {
         reg.setS(previousState.registerState.get("S"));
         reg.setU(previousState.registerState.get("U"));
         reg.setCCR(previousState.registerState.get("CCR"));
-        
+
         // CRITICAL FIX: Restore PC properly
         String pcValue = previousState.registerState.get("PC");
         try {
@@ -377,10 +379,10 @@ public class pas {
         } catch (Exception e) {
             reg.setPC(0);
         }
-        
+
         // Restore current step
         currentStep = previousState.currentStep;
-        
+
         System.out.println("[GUI] Went back to step " + currentStep + " (PC=" + reg.getPC() + ")");
         return true;
     }
@@ -390,19 +392,19 @@ public class pas {
         if (nextState == null) {
             return false;
         }
-        
+
         // Restore RAM
         ram.getram().clear();
         ram.getram().putAll(nextState.ramState);
-        
+
         // Restore ROM
         Map<String, String> romMemory = rom.getMemory();
         romMemory.clear();
         romMemory.putAll(nextState.romState);
-        
+
         // Restore ROM write pointer
         rom.setWritePointer(nextState.romWritePointer);
-        
+
         // Restore registers - INCLUDING PC!
         reg.setA(nextState.registerState.get("A"));
         reg.setB(nextState.registerState.get("B"));
@@ -412,7 +414,7 @@ public class pas {
         reg.setS(nextState.registerState.get("S"));
         reg.setU(nextState.registerState.get("U"));
         reg.setCCR(nextState.registerState.get("CCR"));
-        
+
         // CRITICAL FIX: Restore PC properly
         String pcValue = nextState.registerState.get("PC");
         try {
@@ -421,10 +423,10 @@ public class pas {
         } catch (Exception e) {
             reg.setPC(0);
         }
-        
+
         // Restore current step
         currentStep = nextState.currentStep;
-        
+
         System.out.println("[GUI] Went forward to step " + currentStep + " (PC=" + reg.getPC() + ")");
         return true;
     }
@@ -438,8 +440,8 @@ public class pas {
     }
 
     public String getStateInfo() {
-        return "State " + (stateManager.getCurrentStateIndex() + 1) + "/" + 
-               stateManager.getTotalStates() + ": " + 
-               stateManager.getCurrentStateDescription();
+        return "State " + (stateManager.getCurrentStateIndex() + 1) + "/" +
+                stateManager.getTotalStates() + ": " +
+                stateManager.getCurrentStateDescription();
     }
 }

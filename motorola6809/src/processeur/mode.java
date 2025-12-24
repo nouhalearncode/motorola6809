@@ -3398,22 +3398,32 @@ public class mode {
                 if (!cleanType.equals("UNKNOWN")) {
                     // Get current PC (which already points to next instruction)
                     // Note: PC will be incremented after this instruction, so we push the current
-                    // PC
+                    // PC + instructio size (handled by auto-increment usually, but here we do
+                    // manual)
+
+                    int instrSize = 2; // Opcode + PostByte
+                    if (cleanType.equals("OFFSET_8_BIT") || cleanType.equals("PC_REL_8_BIT"))
+                        instrSize += 1;
+                    if (cleanType.equals("OFFSET_16_BIT") || cleanType.equals("PC_REL_16_BIT"))
+                        instrSize += 2;
+
+                    // The return address should be the address of the NEXT instruction
                     int currentPC = Integer.parseInt(reg.getPC(), 16);
+                    int returnAddr = currentPC + instrSize;
 
                     // Push return address onto stack
                     int sValue = Integer.parseInt(reg.getS(), 16);
 
-                    // Decrement stack and push high byte first (big endian)
+                    // Decrement stack and push high byte
                     sValue -= 2;
-                    String pcVal = String.format("%04X", currentPC);
+                    String pcVal = String.format("%04X", returnAddr);
                     ramMemory.getram().put(String.format("%04X", sValue), pcVal.substring(0, 2));
                     ramMemory.getram().put(String.format("%04X", sValue + 1), pcVal.substring(2));
 
                     // Update stack pointer
                     reg.setS(String.format("%04X", sValue));
 
-                    // Jump to subroutine (set PC to effective address)
+                    // Jump to subroutine
                     reg.setPC(effectiveAddr);
                     pcChangedManually = true; // PC was manually changed, don't auto-increment
 
@@ -3422,16 +3432,17 @@ public class mode {
                     lastInstructionResult = effectiveAddr;
                     lastInstructionFlags = new String[] {};
 
-                    skipPCIncrement = true;
-
                     this.op = opcode;
-                    // CRITICAL: Return here to prevent auto PC increment!
+                    // Return immediately to prevent auto PC increment
                     return new String[] { opcode, cleanedOperand };
                 }
+
             }
         }
 
-        else if (firstWord.equals("CWAI")) {
+        else if (firstWord.equals("CWAI"))
+
+        {
             // CWAI #$Operand
             opcode = "3C";
             cycle = 20; // CWAI takes 20 cycles
@@ -6169,7 +6180,8 @@ public class mode {
                 String[] parts = innerResult.split(":");
                 // AUTO_INC:REG:VAL
                 if (parts[2].equals("1")) {
-                    System.out.println("Error: Indirect Auto-Increment by 1 ([,R+]) is not allowed. Use [,R++] instead.");
+                    System.out
+                            .println("Error: Indirect Auto-Increment by 1 ([,R+]) is not allowed. Use [,R++] instead.");
                     return "UNKNOWN:INVALID:0";
                 }
             }
