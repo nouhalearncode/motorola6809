@@ -2339,193 +2339,6 @@ public class mode {
             }
         }
 
-        // === ADD WITH CARRY INSTRUCTIONS ===
-        else if (firstWord.equals("ADCA")) {
-            // Add after ADCA immediate/extended sections:
-            if (mode.equals(direct)) {
-                opcode = "99"; // ADCA direct opcode
-                cycle = 3; // ADCA direct takes 3 cycles
-
-                String addrStr = secondWord.replace("<", "").replace("$", "");
-                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
-
-                String memVal = readFromRAM(address);
-                int result = performAddWithCarryA(memVal, reg);
-
-                cleanedOperand = String.format("%02X", address);
-
-                lastInstructionHex = memVal;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            if (mode.equals(immediat)) {
-                opcode = "89"; // ADCA immediate opcode
-                cycle = 2;
-                cleanedOperand = secondWord.replace("#$", "");
-                int result = performAddWithCarryA(cleanedOperand, reg);
-                lastInstructionHex = cleanedOperand;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            // ADD EXTENDED MODE
-            else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
-                    && secondWord.replace("$", "").length() == 4)) {
-                opcode = "B9"; // ADCA extended opcode
-                cycle = 5; // ADCA extended takes 5 cycles
-                String addr = secondWord.replace(">", "").replace("$", "");
-                int address = Integer.parseInt(addr, 16);
-
-                // Read from RAM
-                String val = readFromRAM(address);
-
-                // Add with carry to A
-                int result = performAddWithCarryA(val, reg);
-
-                cleanedOperand = addr;
-
-                // Store for flag calculation
-                lastInstructionHex = val;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-        } else if (firstWord.equals("ADCB")) {
-            // Add after ADCB immediate/extended sections:
-            if (mode.equals(direct)) {
-                opcode = "D9"; // ADCB direct opcode
-                cycle = 3; // ADCB direct takes 3 cycles
-
-                String addrStr = secondWord.replace("<", "").replace("$", "");
-                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
-
-                String memVal = readFromRAM(address);
-                int result = performAddWithCarryB(memVal, reg);
-
-                cleanedOperand = String.format("%02X", address);
-
-                lastInstructionHex = memVal;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            if (mode.equals(immediat)) {
-                opcode = "C9"; // ADCB immediate opcode
-                cycle = 2;
-                cleanedOperand = secondWord.replace("#$", "");
-                int result = performAddWithCarryB(cleanedOperand, reg);
-                lastInstructionHex = cleanedOperand;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            // ADD EXTENDED MODE
-            else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
-                    && secondWord.replace("$", "").length() == 4)) {
-                opcode = "F9"; // ADCB extended opcode
-                cycle = 5; // ADCB extended takes 5 cycles
-                String addr = secondWord.replace(">", "").replace("$", "");
-                int address = Integer.parseInt(addr, 16);
-
-                String val = readFromRAM(address);
-
-                int result = performAddWithCarryB(val, reg);
-
-                cleanedOperand = addr;
-
-                lastInstructionHex = val;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-        }
-        // === SUBTRACT WITH CARRY INSTRUCTIONS ===
-        else if (firstWord.equals("SBCA")) {
-            // Add after SBCA immediate/extended sections:
-            if (mode.equals(direct)) {
-                opcode = "92"; // SBCA direct opcode
-                cycle = 3; // SBCA direct takes 3 cycles
-
-                String addrStr = secondWord.replace("<", "").replace("$", "");
-                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
-
-                String memVal = readFromRAM(address);
-                int result = performSubtractWithCarryA(memVal, reg);
-
-                cleanedOperand = String.format("%02X", address);
-
-                lastInstructionHex = memVal;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            if (mode.equals(immediat)) {
-                opcode = "82"; // SBCA immediate opcode
-                cycle = 2;
-                cleanedOperand = secondWord.replace("#$", "");
-                int result = performSubtractWithCarryA(cleanedOperand, reg);
-                lastInstructionHex = cleanedOperand;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            // ADD EXTENDED MODE
-            else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
-                    && secondWord.replace("$", "").length() == 4)) {
-                opcode = "B2"; // SBCA extended opcode
-                cycle = 5; // SBCA extended takes 5 cycles
-                String addr = secondWord.replace(">", "").replace("$", "");
-                int address = Integer.parseInt(addr, 16);
-
-                String val = readFromRAM(address);
-
-                int result = performSubtractWithCarryA(val, reg);
-
-                cleanedOperand = addr;
-
-                lastInstructionHex = val;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-        } else if (firstWord.equals("SBCB")) {
-            // Add after SBCB immediate/extended sections:
-            if (mode.equals(direct)) {
-                opcode = "D2"; // SBCB direct opcode
-                cycle = 3; // SBCB direct takes 3 cycles
-
-                String addrStr = secondWord.replace("<", "").replace("$", "");
-                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
-
-                String memVal = readFromRAM(address);
-                int result = performSubtractWithCarryB(memVal, reg);
-
-                cleanedOperand = String.format("%02X", address);
-
-                lastInstructionHex = memVal;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            if (mode.equals(immediat)) {
-                opcode = "C2"; // SBCB immediate opcode
-                cycle = 2;
-                cleanedOperand = secondWord.replace("#$", "");
-                int result = performSubtractWithCarryB(cleanedOperand, reg);
-                lastInstructionHex = cleanedOperand;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-            // ADD EXTENDED MODE
-            else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
-                    && secondWord.replace("$", "").length() == 4)) {
-                opcode = "F2"; // SBCB extended opcode
-                cycle = 5; // SBCB extended takes 5 cycles
-                String addr = secondWord.replace(">", "").replace("$", "");
-                int address = Integer.parseInt(addr, 16);
-
-                String val = readFromRAM(address);
-
-                int result = performSubtractWithCarryB(val, reg);
-
-                cleanedOperand = addr;
-
-                lastInstructionHex = val;
-                lastInstructionResult = result;
-                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
-            }
-        }
         // Add these cases in your processAndConvertInstruction method:
 
         // === DEC IN EXTENDED MODE ===
@@ -3958,14 +3771,37 @@ public class mode {
             lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
         }
 
-        // === ADD WITH CARRY INSTRUCTIONS (IMMEDIATE + INDEXED) ===
-        if (firstWord.equals("ADCA")) {
+        // === ADD WITH CARRY INSTRUCTIONS (ALL MODES) ===
+        else if (firstWord.equals("ADCA")) {
             if (mode.equals(immediat)) {
-                opcode = "89"; // ADCA immediate opcode
+                opcode = "89";
                 cycle = 2;
                 cleanedOperand = secondWord.replace("#$", "");
                 int result = performADCA(cleanedOperand, reg);
                 lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(direct)) {
+                opcode = "99";
+                cycle = 4;
+                String addrStr = secondWord.replace("<", "").replace("$", "");
+                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+                String memVal = readFromRAM(address);
+                int result = performADCA(memVal, reg);
+                cleanedOperand = String.format("%02X", address);
+                lastInstructionHex = memVal;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "B9";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                String val = readFromRAM(address);
+                int result = performADCA(val, reg);
+                cleanedOperand = addr;
+                lastInstructionHex = val;
                 lastInstructionResult = result;
                 lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
             } else if (mode.equals(indexe)) {
@@ -3976,11 +3812,34 @@ public class mode {
             }
         } else if (firstWord.equals("ADCB")) {
             if (mode.equals(immediat)) {
-                opcode = "C9"; // ADCB immediate opcode
+                opcode = "C9";
                 cycle = 2;
                 cleanedOperand = secondWord.replace("#$", "");
                 int result = performADCB(cleanedOperand, reg);
                 lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(direct)) {
+                opcode = "D9";
+                cycle = 4;
+                String addrStr = secondWord.replace("<", "").replace("$", "");
+                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+                String memVal = readFromRAM(address);
+                int result = performADCB(memVal, reg);
+                cleanedOperand = String.format("%02X", address);
+                lastInstructionHex = memVal;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "F9";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                String val = readFromRAM(address);
+                int result = performADCB(val, reg);
+                cleanedOperand = addr;
+                lastInstructionHex = val;
                 lastInstructionResult = result;
                 lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
             } else if (mode.equals(indexe)) {
@@ -3991,14 +3850,37 @@ public class mode {
             }
         }
 
-        // === SUBTRACT WITH CARRY INSTRUCTIONS (IMMEDIAT + INDEXED) ===
-        if (firstWord.equals("SBCA")) {
+        // === SUBTRACT WITH CARRY INSTRUCTIONS (ALL MODES) ===
+        else if (firstWord.equals("SBCA")) {
             if (mode.equals(immediat)) {
-                opcode = "82"; // SBCA immediate opcode
+                opcode = "82";
                 cycle = 2;
                 cleanedOperand = secondWord.replace("#$", "");
                 int result = performSBCA(cleanedOperand, reg);
                 lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(direct)) {
+                opcode = "92";
+                cycle = 4;
+                String addrStr = secondWord.replace("<", "").replace("$", "");
+                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+                String memVal = readFromRAM(address);
+                int result = performSBCA(memVal, reg);
+                cleanedOperand = String.format("%02X", address);
+                lastInstructionHex = memVal;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "B2";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                String val = readFromRAM(address);
+                int result = performSBCA(val, reg);
+                cleanedOperand = addr;
+                lastInstructionHex = val;
                 lastInstructionResult = result;
                 lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
             } else if (mode.equals(indexe)) {
@@ -4009,11 +3891,34 @@ public class mode {
             }
         } else if (firstWord.equals("SBCB")) {
             if (mode.equals(immediat)) {
-                opcode = "C2"; // SBCB immediate opcode
+                opcode = "C2";
                 cycle = 2;
                 cleanedOperand = secondWord.replace("#$", "");
                 int result = performSBCB(cleanedOperand, reg);
                 lastInstructionHex = cleanedOperand;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(direct)) {
+                opcode = "D2";
+                cycle = 4;
+                String addrStr = secondWord.replace("<", "").replace("$", "");
+                int address = Integer.parseInt(addrStr, 16) & 0x00FF;
+                String memVal = readFromRAM(address);
+                int result = performSBCB(memVal, reg);
+                cleanedOperand = String.format("%02X", address);
+                lastInstructionHex = memVal;
+                lastInstructionResult = result;
+                lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
+            } else if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
+                    && secondWord.replace("$", "").length() == 4)) {
+                opcode = "F2";
+                cycle = 5;
+                String addr = secondWord.replace(">", "").replace("$", "");
+                int address = Integer.parseInt(addr, 16);
+                String val = readFromRAM(address);
+                int result = performSBCB(val, reg);
+                cleanedOperand = addr;
+                lastInstructionHex = val;
                 lastInstructionResult = result;
                 lastInstructionFlags = new String[] { "Z", "N", "V", "C" };
             } else if (mode.equals(indexe)) {
