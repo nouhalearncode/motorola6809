@@ -6611,8 +6611,9 @@ public class mode {
                         postByte = 0b10001011;
                         break;
                 }
-                // Pour ACC_OFFSET, 'value' contient le registre d'index
-                // On doit réinterpréter register comme l'acc et récupérer le vrai reg
+                // Pour ACC_OFFSET, 'value' contient le registre d'index (0-3 pour X, Y, U, S)
+                // On doit ajouter les bits du registre d'index (bits 6 et 5)
+                postByte = postByte | (value << 5);
                 break;
 
             case "OFFSET_8_BIT":
@@ -6639,6 +6640,7 @@ public class mode {
         }
 
         return String.format("%02X", postByte);
+
     }
 
     /**

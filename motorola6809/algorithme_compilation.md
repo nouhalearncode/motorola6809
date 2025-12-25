@@ -29,7 +29,7 @@ L'algorithme analyse la syntaxe du `Mot 2` (Opérande) :
 *   **Si** commence par `#` → **IMMÉDIAT** (ex: `#$10`)
 *   **Si** commence par `<` OU (hexadécimal longueur 2) → **DIRECT** (ex: `$10`)
 *   **Si** commence par `>` OU (hexadécimal longueur 4) → **ÉTENDU** (ex: `$1000`)
-*   **Sinon** (pas d'opérande) → **INHÉRENT** (ex: `NEGA`, `RTS`)
+*   **Sinon** (pas d'opérande) → **INHÉRENT** (ex: `NEGA`)
 
 ---
 
@@ -51,7 +51,25 @@ SI Instruction == "LDB" :
 
 ---
 
-## 4. Traitement des Modes Complexes (Indexé & Indirect)
+## 4. Traitement des Modes Simples (Immédiat, Direct & Étendu)
+Pour les modes d'adressage de base, la compilation est linéaire :
+
+1.  **Mode Immédiat (`#`)** :
+    *   La donnée est incluse dans l'octet suivant l'opcode.
+    *   L'algorithme extrait la valeur hexadécimale après le symbole `#`.
+    *   *Exemple* : `LDA #$10` -> L'opcode `86` est suivi de la valeur `10`.
+2.  **Mode Direct (`<`)** :
+    *   Cible la "Page 0" de la mémoire (adresses de `$0000` à `$00FF`).
+    *   L'algorithme utilise un seul octet d'adresse, complété par `$00` en poids fort.
+    *   *Exemple* : `LDA $20` -> Accède à l'adresse `$0020`.
+3.  **Mode Étendu (`>`)** :
+    *   Permet d'adresser toute la mémoire (16 bits).
+    *   L'algorithme extrait l'adresse complète sur 4 caractères hexadécimaux.
+    *   *Exemple* : `LDA $1000` -> Accède à l'adresse `$1000`.
+
+---
+
+## 5. Traitement des Modes Complexes (Indexé & Indirect)
 Pour le mode indexé, une **sous-routine de compilation** est lancée (`parseIndexedMode`).
 
 1.  **Parsing Indexé** :
@@ -66,7 +84,7 @@ Pour le mode indexé, une **sous-routine de compilation** est lancée (`parseInd
 
 ---
 
-## 5. Exécution et Mise à jour de l'État (Cycle Machine)
+## 6. Exécution et Mise à jour de l'État (Cycle Machine)
 Une fois l'instruction entièrement décodée :
 
 1.  **Calcul de l'Adresse Effective (EA)** :
