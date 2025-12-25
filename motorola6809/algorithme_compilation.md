@@ -29,7 +29,7 @@ L'algorithme analyse la syntaxe du `Mot 2` (Opérande) :
 *   **Si** commence par `#` → **IMMÉDIAT** (ex: `#$10`)
 *   **Si** commence par `<` OU (hexadécimal longueur 2) → **DIRECT** (ex: `$10`)
 *   **Si** commence par `>` OU (hexadécimal longueur 4) → **ÉTENDU** (ex: `$1000`)
-*   **Sinon** (pas d'opérande) → **INHÉRENT** (ex: `NEGA`, `RTS`)
+*   **Sinon** (pas d'opérande) → **INHÉRENT** (ex: `NEGA`)
 
 ---
 
