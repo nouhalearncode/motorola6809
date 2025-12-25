@@ -53,28 +53,6 @@ public class lecture {
             String[] words = inputLine.split("\\s+"); // Split by spaces
             ArrayList<String> lineWords = new ArrayList<>();
 
-            // Process and convert assembly to machine code
-            // if (words.length >= 1) {
-
-            // String firstWord = words[0];
-            // String secondWord = (words.length > 1) ? words[1] : "";
-
-            // // SINGLE METHOD CALL: Process, convert, and update registers
-            // String[] converted = modeDetector.processAndConvertInstruction(firstWord,
-            // secondWord, reg);
-            // String opcode = converted[0];
-            // String cleanedOperand = converted[1];
-
-            // // Store opcode in ROM and RAM
-            // if (!opcode.equals("00")) {
-            // this.rom.writeData(opcode);
-            // this.ram.writeAndClear(opcode);
-            // }
-
-            // // Store cleaned operand in ROM (if exists)
-            // if (!cleanedOperand.isEmpty() && !cleanedOperand.equals(secondWord)) {
-            // this.rom.writeData(cleanedOperand);
-            // }
             // Keep original words for display
             for (String word : words) {
                 if (!word.isEmpty()) {
@@ -113,68 +91,3 @@ public class lecture {
     }
 
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////// 0/////////////
-///
-///
-///
-/* this is what i should use is i want to have the seccond word or the first */
-
-// // Print only the first word from each line
-// System.out.println("\n--- First Words Only ---");
-// for (int line = 0; line < lines.size(); line++) {
-// if (lines.get(line).size() > 0) { // Check if line has at least 1 word
-// System.out.println(lines.get(line).get(0));
-// }
-// }
-
-// // // Now you can access second word!
-// System.out.println("\n--- Access Individual Words ---");
-// System.out.println("\nAll words individually:");
-// for (int line = 0; line < lines.size(); line++) {
-// if (lines.get(line).size() > 1) {
-// System.out.println(lines.get(line).get(1));
-// }
-// }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Simple method to get all first words as a list
-// public ArrayList<String> getAllFirstWords() {
-// ArrayList<String> firstWords = new ArrayList<>();
-// for (ArrayList<String> line : lines) {
-// if (!line.isEmpty()) {
-// firstWords.add(line.get(0));
-// }
-// }
-// return firstWords;
-// }
-
-// // Simple method to get all first letters of second words
-// public ArrayList<Character> getAllSecondWordFirstLetters() {
-// ArrayList<Character> firstLetters = new ArrayList<>();
-// for (ArrayList<String> line : lines) {
-// if (line.size() > 1 && !line.get(1).isEmpty()) {
-// firstLetters.add(line.get(1).charAt(0));
-// }
-// }
-// return firstLetters;
-// }
-
-// // Get the first character of the second word from a specific line
-// public char getSecondWordFirstChar(int compteurdelignee) {
-// // Convert to 0-based indexing and check bounds
-// int index = compteurdelignee - 1;
-// if (index >= 0 && index < lines.size() && lines.get(index).size() > 1) {
-// String secondWord = lines.get(index).get(1);
-// if (!secondWord.isEmpty()) {
-
-// return secondWord.charAt(0);
-// }
-// }
-// return ' '; // Return space if not available
-// }
-// public ArrayList<ArrayList<String>> getLines() {
-// return lines;
-// }
-// }

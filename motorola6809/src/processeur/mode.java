@@ -93,7 +93,7 @@ public class mode {
         this.reg = reg; // STORE THE REGISTER FOR LATER USE
         boolean pcChangedManually = false; // Flag to prevent automatic PC increment for control flow instructions
 
-        if (firstWord.equals("LDA")) {
+        if (firstWord.equals("LDA") || firstWord.equals("LDAA")) {
             // In the LDA section, add this after the indexed mode handling:
             if (mode.equals(etendu) || (secondWord.startsWith("$") && !secondWord.contains(",")
                     && secondWord.replace("$", "").length() == 4)) {
