@@ -5539,12 +5539,22 @@ public class mode {
         int operandValue = Integer.parseInt(operand, 16);
         int result = currentB + operandValue;
 
-        if (result > 255) {
-            result = result & 0xFF;
-        }
+        // Calculate flags
+        int carryOut = (result > 0xFF) ? 1 : 0;
+        result = result & 0xFF;
 
         String resultHex = String.format("%02X", result);
         reg.setB(resultHex);
+
+        // Calculate other flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int signB = (currentB >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signB == signOp) && (signB != signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
         return result;
     }
 
@@ -5553,13 +5563,22 @@ public class mode {
         int operandValue = Integer.parseInt(operand, 16);
         int result = currentD + operandValue;
 
-        // Handle 16-bit overflow
-        if (result > 65535) {
-            result = result & 0xFFFF;
-        }
+        // Calculate flags (16-bit)
+        int carryOut = (result > 0xFFFF) ? 1 : 0;
+        result = result & 0xFFFF;
 
         String resultHex = String.format("%04X", result);
         reg.setD(resultHex);
+
+        // Calculate other flags
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x8000) != 0) ? 1 : 0;
+        int signD = (currentD >> 15) & 0x01;
+        int signOp = (operandValue >> 15) & 0x01;
+        int signRes = (result >> 15) & 0x01;
+        int vFlag = ((signD == signOp) && (signD != signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, carryOut, reg);
         return result;
     }
 
@@ -5567,82 +5586,78 @@ public class mode {
     private int performAndA(String operand, registre reg) {
         int currentA = Integer.parseInt(reg.getA(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentA & operandValue; // Bitwise AND
+        int result = (currentA & operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setA(resultHex);
+        reg.setA(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
     private int performAndB(String operand, registre reg) {
         int currentB = Integer.parseInt(reg.getB(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentB & operandValue;
+        int result = (currentB & operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setB(resultHex);
+        reg.setB(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
     private int performAndCC(String operand, registre reg) {
         int currentCC = Integer.parseInt(reg.getCCR(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentCC & operandValue;
+        int result = (currentCC & operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setCCR(resultHex);
-        return result;
+        reg.setCCR(String.format("%02X", result));
+        return result; // ANDCC directly affects CCR, no secondary update needed
     }
 
-    // === OR METHODS ===
     private int performOrA(String operand, registre reg) {
         int currentA = Integer.parseInt(reg.getA(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentA | operandValue; // Bitwise OR
+        int result = (currentA | operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setA(resultHex);
+        reg.setA(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
     private int performOrB(String operand, registre reg) {
         int currentB = Integer.parseInt(reg.getB(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentB | operandValue;
+        int result = (currentB | operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setB(resultHex);
+        reg.setB(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
     private int performOrCC(String operand, registre reg) {
         int currentCC = Integer.parseInt(reg.getCCR(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentCC | operandValue;
+        int result = (currentCC | operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setCCR(resultHex);
+        reg.setCCR(String.format("%02X", result));
         return result;
     }
 
-    // === EOR (XOR) METHODS ===
     private int performEorA(String operand, registre reg) {
         int currentA = Integer.parseInt(reg.getA(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentA ^ operandValue; // Bitwise XOR
+        int result = (currentA ^ operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setA(resultHex);
+        reg.setA(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
     private int performEorB(String operand, registre reg) {
         int currentB = Integer.parseInt(reg.getB(), 16);
         int operandValue = Integer.parseInt(operand, 16);
-        int result = currentB ^ operandValue;
+        int result = (currentB ^ operandValue) & 0xFF;
 
-        String resultHex = String.format("%02X", result);
-        reg.setB(resultHex);
+        reg.setB(String.format("%02X", result));
+        updateCCRBasedOnFlags((result == 0 ? 1 : 0), ((result & 0x80) != 0 ? 1 : 0), 0, -1, reg);
         return result;
     }
 
@@ -5682,13 +5697,19 @@ public class mode {
         int operandValue = Integer.parseInt(operand, 16);
         int result = currentB - operandValue;
 
-        // Handle 8-bit overflow
-        if (result < 0) {
-            result += 256;
-        }
+        int borrow = (result < 0) ? 1 : 0;
+        result = result & 0xFF;
 
-        String resultHex = String.format("%02X", result & 0xFF);
-        reg.setB(resultHex);
+        reg.setB(String.format("%02X", result));
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x80) != 0) ? 1 : 0;
+        int signB = (currentB >> 7) & 0x01;
+        int signOp = (operandValue >> 7) & 0x01;
+        int signRes = (result >> 7) & 0x01;
+        int vFlag = ((signB != signOp) && (signOp == signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrow, reg);
         return result;
     }
 
@@ -5697,78 +5718,105 @@ public class mode {
         int operandValue = Integer.parseInt(operand, 16);
         int result = currentD - operandValue;
 
-        // Handle 16-bit overflow
-        if (result < 0) {
-            result += 65536;
-        }
+        int borrow = (result < 0) ? 1 : 0;
+        result = result & 0xFFFF;
 
-        String resultHex = String.format("%04X", result & 0xFFFF);
-        reg.setD(resultHex);
+        reg.setD(String.format("%04X", result));
+
+        int zFlag = (result == 0) ? 1 : 0;
+        int nFlag = ((result & 0x8000) != 0) ? 1 : 0;
+        int signD = (currentD >> 15) & 0x01;
+        int signOp = (operandValue >> 15) & 0x01;
+        int signRes = (result >> 15) & 0x01;
+        int vFlag = ((signD != signOp) && (signOp == signRes)) ? 1 : 0;
+
+        updateCCRBasedOnFlags(zFlag, nFlag, vFlag, borrow, reg);
         return result;
     }
 
     // NEW COMPARE METHODS - These DON'T change registers, only calculate flags
     private int performCompareA(String operand, registre reg) {
-        int currentA = Integer.parseInt(reg.getA(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentA - operandValue;
+        int val = Integer.parseInt(reg.getA(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
 
-        // Note: Register A is NOT changed - only flags are set
-        return result;
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x80) != 0 ? 1 : 0),
+                ((val >> 7 != opVal >> 7) && (opVal >> 7 == res >> 7) ? 1 : 0), borrow, reg);
+        return res;
     }
 
     private int performCompareB(String operand, registre reg) {
-        int currentB = Integer.parseInt(reg.getB(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentB - operandValue;
+        int val = Integer.parseInt(reg.getB(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
 
-        // Register B is NOT changed
-        return result;
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x80) != 0 ? 1 : 0),
+                ((val >> 7 != opVal >> 7) && (opVal >> 7 == res >> 7) ? 1 : 0), borrow, reg);
+        return res;
     }
 
     private int performCompareD(String operand, registre reg) {
-        int currentD = Integer.parseInt(reg.getD(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentD - operandValue;
+        int val = Integer.parseInt(reg.getD(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
 
-        // Register D is NOT changed
-        return result;
-    }
-
-    private int performCompareS(String operand, registre reg) {
-        int currentS = Integer.parseInt(reg.getS(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentS - operandValue;
-
-        // Register S is NOT changed
-        return result;
-    }
-
-    private int performCompareU(String operand, registre reg) {
-        int currentU = Integer.parseInt(reg.getU(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentU - operandValue;
-
-        // Register U is NOT changed
-        return result;
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFFFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x8000) != 0 ? 1 : 0),
+                ((val >> 15 != opVal >> 15) && (opVal >> 15 == res >> 15) ? 1 : 0), borrow, reg);
+        return res;
     }
 
     private int performCompareX(String operand, registre reg) {
-        int currentX = Integer.parseInt(reg.getX(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentX - operandValue;
+        int val = Integer.parseInt(reg.getX(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
 
-        // Register X is NOT changed
-        return result;
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFFFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x8000) != 0 ? 1 : 0),
+                ((val >> 15 != opVal >> 15) && (opVal >> 15 == res >> 15) ? 1 : 0), borrow, reg);
+        return res;
     }
 
     private int performCompareY(String operand, registre reg) {
-        int currentY = Integer.parseInt(reg.getY(), 16);
-        int operandValue = Integer.parseInt(operand, 16);
-        int result = currentY - operandValue;
+        int val = Integer.parseInt(reg.getY(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
 
-        // Register Y is NOT changed
-        return result;
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFFFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x8000) != 0 ? 1 : 0),
+                ((val >> 15 != opVal >> 15) && (opVal >> 15 == res >> 15) ? 1 : 0), borrow, reg);
+        return res;
+    }
+
+    private int performCompareS(String operand, registre reg) {
+        int val = Integer.parseInt(reg.getS(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
+
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFFFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x8000) != 0 ? 1 : 0),
+                ((val >> 15 != opVal >> 15) && (opVal >> 15 == res >> 15) ? 1 : 0), borrow, reg);
+        return res;
+    }
+
+    private int performCompareU(String operand, registre reg) {
+        int val = Integer.parseInt(reg.getU(), 16);
+        int opVal = Integer.parseInt(operand, 16);
+        int res = val - opVal;
+
+        int borrow = (res < 0) ? 1 : 0;
+        res &= 0xFFFF;
+        updateCCRBasedOnFlags((res == 0 ? 1 : 0), ((res & 0x8000) != 0 ? 1 : 0),
+                ((val >> 15 != opVal >> 15) && (opVal >> 15 == res >> 15) ? 1 : 0), borrow, reg);
+        return res;
     }
 
     // === ONLY ONE calculateSelectedFlags METHOD ===

@@ -425,6 +425,17 @@ public class InstructionValidator {
                 return "❌ ERREUR: Valeur hexadécimale invalide: " + operand + "\n" +
                         "Les valeurs hexadécimales doivent contenir uniquement: 0-9, A-F";
             }
+
+            // Vérification de la taille (8-bit vs 16-bit)
+            boolean is16Bit = is16BitInstruction(instruction);
+            if (is16Bit && hexPart.length() > 4) {
+                return "❌ ERREUR: Valeur trop grande pour '" + instruction + "' (16-bits).\n" +
+                        "➡️ Le maximum est $FFFF (4 chiffres hex).";
+            }
+            if (!is16Bit && hexPart.length() > 2) {
+                return "❌ ERREUR: L'instruction '" + instruction + "' est une opération 8-bits.\n" +
+                        "➡️ Elle n'accepte pas de valeur supérieure à $FF (2 chiffres hex).";
+            }
             return null;
         }
 
@@ -502,15 +513,29 @@ public class InstructionValidator {
             String r1 = regs[0].trim().toUpperCase();
             String r2 = regs[1].trim().toUpperCase();
 
-            String validRegs = "A|B|D|X|Y|U|S|PC|CCR|DP";
-            if (!r1.matches(validRegs) || !r2.matches(validRegs)) {
+            String validRegsList = "A|B|D|X|Y|U|S|PC|CCR|DP";
+            if (!r1.matches(validRegsList) || !r2.matches(validRegsList)) {
                 return "❌ ERREUR: Registre(s) invalide(s) pour " + instruction + ": " + operand + "\n" +
-                        "➡️ Registres valides: A, B, D, X, Y, U, S, PC, CC, DP";
+                        "➡️ Registres valides: A, B, D, X, Y, U, S, PC, CCR, DP";
             }
+
+            // Vérification de la taille des registres
+            boolean r1Is16 = is16BitRegister(r1);
+            boolean r2Is16 = is16BitRegister(r2);
+
+            if (r1Is16 != r2Is16) {
+                return "❌ ERREUR: Incohérence de taille pour " + instruction + " (" + r1 + "," + r2 + ").\n" +
+                        "➡️ Vous ne pouvez pas transférer entre un registre 8-bits et un registre 16-bits.";
+            }
+
             return null;
         }
 
         return null;
+    }
+
+    private static boolean is16BitRegister(String reg) {
+        return reg.matches("D|X|Y|U|S|PC");
     }
 
     private static boolean isValidHex(String hex) {
@@ -554,6 +579,11 @@ public class InstructionValidator {
         }
 
         return dp[a.length()][b.length()];
+    }
+
+    private static boolean is16BitInstruction(String instruction) {
+        return instruction.matches(
+                "LDD|LDX|LDY|LDS|LDU|STD|STX|STY|STS|STU|ADDD|SUBD|CMPD|CMPX|CMPY|CMPS|CMPU|LEAX|LEAY|LEAS|LEAU");
     }
 
     private static String getModeDisplayName(String mode) {

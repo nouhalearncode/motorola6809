@@ -51,44 +51,82 @@ public class registre {
 
     // Setters
     public void setA(String value) {
-        this.A = value;
+        // Enforce 8-bit (2 hex digits)
+        if (value.length() > 2) {
+            value = value.substring(value.length() - 2);
+        } else if (value.length() < 2) {
+            value = String.format("%02X", Integer.parseInt(value, 16));
+        }
+        this.A = value.toUpperCase();
         // D est la concaténation de A et B (D = A:B)
         this.D = this.A + this.B;
     }
 
     public void setB(String value) {
-        this.B = value;
+        // Enforce 8-bit (2 hex digits)
+        if (value.length() > 2) {
+            value = value.substring(value.length() - 2);
+        } else if (value.length() < 2) {
+            value = String.format("%02X", Integer.parseInt(value, 16));
+        }
+        this.B = value.toUpperCase();
         // D est la concaténation de A et B (D = A:B)
         this.D = this.A + this.B;
     }
 
     public void setD(String value) {
-        this.D = value;
-        // Quand D change, il faut aussi mettre à jour A et B
-        if (value.length() >= 4) {
-            this.A = value.substring(0, 2); // 2 premiers caractères = A
-            this.B = value.substring(2, 4); // 2 derniers caractères = B
+        // Enforce 16-bit (4 hex digits)
+        if (value.length() > 4) {
+            value = value.substring(value.length() - 4);
+        } else if (value.length() < 4) {
+            value = String.format("%04X", Integer.parseInt(value, 16));
         }
+        this.D = value.toUpperCase();
+        // Quand D change, il faut aussi mettre à jour A et B
+        this.A = this.D.substring(0, 2); // 2 premiers caractères = A
+        this.B = this.D.substring(2, 4); // 2 derniers caractères = B
+    }
+
+    private String format16Bit(String value) {
+        if (value.length() > 4) {
+            return value.substring(value.length() - 4).toUpperCase();
+        } else if (value.length() < 4) {
+            try {
+                return String.format("%04X", Integer.parseInt(value, 16));
+            } catch (NumberFormatException e) {
+                return "0000";
+            }
+        }
+        return value.toUpperCase();
     }
 
     public void setX(String value) {
-        this.X = value;
+        this.X = format16Bit(value);
     }
 
     public void setY(String value) {
-        this.Y = value;
+        this.Y = format16Bit(value);
     }
 
     public void setS(String value) {
-        this.S = value;
+        this.S = format16Bit(value);
     }
 
     public void setU(String value) {
-        this.U = value;
+        this.U = format16Bit(value);
     }
 
     public void setCCR(String value) {
-        this.CCR = value;
+        if (value.length() > 2) {
+            value = value.substring(value.length() - 2);
+        } else if (value.length() < 2) {
+            try {
+                value = String.format("%02X", Integer.parseInt(value, 16));
+            } catch (NumberFormatException e) {
+                value = "00";
+            }
+        }
+        this.CCR = value.toUpperCase();
     }
 
     public void setPC(int value) {
